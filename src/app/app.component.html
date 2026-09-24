@@ -4,11 +4,11 @@
       <rect width="28" height="20" rx="5" fill="#ff0033" />
       <path d="M11 5.5v9l7.5-4.5z" fill="#fff" />
     </svg>
-    <h1 class="min-w-0 flex-1 truncate text-xl font-bold">Kênh của Mẹ</h1>
-    <button type="button" class="btn-ghost px-4" [disabled]="feed.loading()" (click)="refresh()" aria-label="Tải video mới">
+    <h1 class="min-w-0 flex-1 truncate text-lg font-bold">Kênh của Mẹ</h1>
+    <button type="button" class="btn-ghost px-3" [disabled]="feed.loading()" (click)="refresh()" aria-label="Tải video mới">
       <span class="inline-block" [class.animate-spin]="feed.loading()">⟳</span>
     </button>
-    <button type="button" class="btn-ghost px-4" (click)="settingsOpen.set(true)" aria-label="Cài đặt">⚙</button>
+    <button type="button" class="btn-ghost px-3" (click)="settingsOpen.set(true)" aria-label="Cài đặt">⚙</button>
   </div>
   <nav class="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none]">
     @for (tab of tabs(); track tab.id) {

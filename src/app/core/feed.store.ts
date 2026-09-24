@@ -2,7 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { ChannelStats, Video, VIDEO_ORIGIN } from './models';
 import { SettingsStore } from './settings.store';
 import { readJson, writeJson } from './storage';
-import { mergeTopicVideos, searchOrderFor } from './topic-rotation';
+import { mergeTopicVideos, searchWindowDaysFor } from './topic-rotation';
 import { YoutubeApi, YoutubeApiError } from './youtube-api';
 
 const CACHE_KEY = 'feed-cache';
@@ -14,7 +14,6 @@ export const FEED_POLICY = {
   statsTtlMs: 7 * 24 * HOUR_MS,
   uploadsPerChannel: 15,
   searchResultsPerTopic: 40,
-  searchWindowDays: 365,
   maxVideosPerTopic: 150,
 } as const;
 
@@ -106,8 +105,8 @@ export class FeedStore {
           this.isStale(sources[topicKey(t.id)], userRequested ? FEED_POLICY.topicMinRefreshMs : FEED_POLICY.topicTtlMs, now),
         )
         .map((t) => async () => {
-          const since = new Date(now - FEED_POLICY.searchWindowDays * 24 * HOUR_MS);
-          const ids = await this.api.searchVideoIds(t.query, FEED_POLICY.searchResultsPerTopic, since, searchOrderFor(now));
+          const since = new Date(now - searchWindowDaysFor(now) * 24 * HOUR_MS);
+          const ids = await this.api.searchVideoIds(t.query, FEED_POLICY.searchResultsPerTopic, since);
           const fresh = await this.api.videoDetails(ids, { origin: VIDEO_ORIGIN.TOPIC, topicId: t.id });
           const previous = sources[topicKey(t.id)]?.videos ?? [];
           sources[topicKey(t.id)] = { fetchedAt: now, videos: mergeTopicVideos(fresh, previous, FEED_POLICY.maxVideosPerTopic) };

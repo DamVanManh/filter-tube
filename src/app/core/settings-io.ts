@@ -19,6 +19,7 @@ export function parseSettings(raw: unknown): Settings | null {
   if (!isObjectArrayWith(r['topics'], ['id', 'label', 'query'])) return null;
   if (!isStringArray(r['bannedKeywords'])) return null;
   if (!isObjectArrayWith(r['blockedChannels'], ['id', 'title'])) return null;
+  const blockedCategoryIds = isStringArray(r['blockedCategoryIds']) ? r['blockedCategoryIds'] : DEFAULT_SETTINGS.blockedCategoryIds;
   const t = (typeof r['thresholds'] === 'object' && r['thresholds'] !== null ? r['thresholds'] : {}) as Record<string, unknown>;
   const language = (typeof r['language'] === 'object' && r['language'] !== null ? r['language'] : {}) as Record<string, unknown>;
   const num = (key: keyof Settings['thresholds']): number =>
@@ -34,6 +35,7 @@ export function parseSettings(raw: unknown): Settings | null {
       minChannelAgeDays: num('minChannelAgeDays'),
       maxUppercaseRatio: num('maxUppercaseRatio'),
     },
+    blockedCategoryIds,
     language: {
       requireVietnamese:
         typeof language['requireVietnamese'] === 'boolean'

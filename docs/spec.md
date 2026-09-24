@@ -10,14 +10,23 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
 - Nguồn video duy nhất:
   1. Kênh tin cậy — video mới đăng của các kênh do người quản lý thêm.
   2. Chủ đề — tìm theo từ khóa (safeSearch nghiêm, vùng VN, tiếng Việt, chỉ video nhúng được).
-- Mọi video phải qua bộ lọc: không phải nội dung trẻ em (madeForKids), dài >= ngưỡng phút,
-  kênh không nằm trong blacklist/danh sách chặn, tiêu đề/tên kênh không chứa từ cấm,
-  tiêu đề không viết hoa quá nửa, kênh lạ (từ chủ đề) phải đủ ngưỡng người đăng ký và tuổi kênh.
-  Kênh tin cậy bỏ qua ngưỡng người đăng ký/tuổi kênh nhưng vẫn chịu từ cấm & madeForKids.
-- Bấm video: phát toàn màn hình. Khi tạm dừng hoặc phát xong, app che trình phát bằng lớp của
-  mình (không để lộ "video gợi ý" của YouTube). Phát xong: đếm ngược rồi sang video kế trong feed.
+- Mọi video phải qua bộ lọc: không phải nội dung trẻ em (madeForKids), phải là tiếng Việt
+  (tiêu đề có chữ tiếng Việt và âm thanh không khai ngôn ngữ khác), dài >= ngưỡng phút,
+  kênh không nằm trong danh sách chặn, tiêu đề/tên kênh không chứa từ cấm (giật tít, hù dọa
+  sức khỏe, truyện AI, cờ bạc/bói toán, trò chơi trẻ em), tiêu đề không viết hoa quá nửa.
+  Kênh lạ (từ chủ đề) thêm: đủ ngưỡng người đăng ký và tuổi kênh, và không thuộc danh mục
+  Phim & Hoạt hình / Giải trí / Tin tức / Hài / Trò chơi / Trailer.
+  Kênh tin cậy bỏ qua ngưỡng kênh và danh mục nhưng vẫn chịu các quy tắc nội dung.
+- Tìm theo chủ đề luôn xếp theo "phổ biến"; khoảng thời gian luân phiên 1 năm / 2 tháng mỗi 6 giờ,
+  kết quả cộng dồn (tối đa 150 video mỗi chủ đề) để mỗi lần tải có video mới.
+- Bấm video: phát trong khung 16:9. Trình phát YouTube không nhận bất kỳ cú chạm nào — một lớp
+  chắn phủ toàn khung; mọi điều khiển (phát/dừng, lùi/tới 10 giây, thanh tua) là nút của app.
+  Khi tạm dừng hoặc phát xong, app che trình phát bằng lớp của mình. Phát xong: đếm ngược 8 giây
+  rồi sang video kế trong feed.
 - Nút lớn "Không xem kênh này nữa" trong màn phát ⇒ kênh vào danh sách chặn ngay.
-- Không có đường nào rời app sang YouTube (logo, tiêu đề trong trình phát bị chặn).
+- Không có đường nào rời app sang YouTube: lớp chắn chạm + tầng Android chặn mọi điều hướng
+  và cửa sổ mới ra ngoài app (chỉ cho phép khung nhúng YouTube).
+- Mạng lỗi lúc mở app: tự thử lại (3s, 10s, 30s); mở app từ nền cũng tự tải lại.
 - Video đã xem được đẩy xuống cuối.
 - Cài đặt (khóa PIN, tạo PIN lần đầu): kênh tin cậy (thêm bằng @handle hoặc link kênh), chủ đề,
   từ cấm, kênh chặn, ngưỡng lọc, xuất/nhập JSON sao lưu.

@@ -14,6 +14,7 @@ export interface Video {
   readonly durationSeconds: number;
   readonly madeForKids: boolean;
   readonly audioLanguage: string | null;
+  readonly categoryId: string | null;
   readonly embeddable: boolean;
   readonly origin: VideoOrigin;
   readonly topicId: string | null;
@@ -60,11 +61,13 @@ export interface Settings {
   readonly blockedChannels: readonly BlockedChannel[];
   readonly thresholds: FilterThresholds;
   readonly language: LanguageRule;
+  readonly blockedCategoryIds: readonly string[];
 }
 
 export const REJECT_REASON = {
   NOT_EMBEDDABLE: 'not-embeddable',
   NOT_VIETNAMESE: 'not-vietnamese',
+  BLOCKED_CATEGORY: 'blocked-category',
   MADE_FOR_KIDS: 'made-for-kids',
   TOO_SHORT: 'too-short',
   BLOCKED_CHANNEL: 'blocked-channel',

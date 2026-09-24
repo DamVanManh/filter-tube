@@ -1,9 +1,14 @@
 <div class="fixed inset-0 z-40 flex flex-col bg-black">
-  <div class="relative flex-1">
-    <div #playerHost class="absolute inset-0"></div>
+  <div class="safe-top flex items-center gap-3 bg-neutral-900 px-4 py-2">
+    <button type="button" class="btn-ghost shrink-0" (click)="close()">← Danh sách</button>
+    <p class="line-clamp-2 min-w-0 flex-1 text-base leading-snug text-white/80">{{ video().title }}</p>
+  </div>
 
-    <div class="absolute inset-x-0 top-0 h-16" (click)="pause()"></div>
-    <div class="absolute bottom-0 right-0 h-14 w-28" (click)="pause()"></div>
+  <div class="relative flex flex-1 items-center justify-center">
+    <div class="relative aspect-video max-h-full w-full">
+      <div #playerHost class="absolute inset-0"></div>
+      <div class="absolute inset-0" data-testid="tap-shield" (click)="togglePlay()"></div>
+    </div>
 
     @switch (overlay()) {
       @case (OVERLAY.PAUSED) {
@@ -55,11 +60,20 @@
     }
   </div>
 
-  @if (overlay() === OVERLAY.NONE) {
-    <div class="safe-bottom flex items-center justify-between gap-3 bg-neutral-900 px-4 py-2">
-      <button type="button" class="btn-ghost" (click)="close()">← Danh sách</button>
-      <p class="line-clamp-1 flex-1 text-base text-white/80">{{ video().channelTitle }}</p>
-      <button type="button" class="btn-ghost" (click)="pause()">⏸ Dừng</button>
+  <div class="safe-bottom flex flex-col gap-3 bg-neutral-900 px-4 pb-4 pt-3">
+    <div class="flex items-center gap-3 text-base tabular-nums text-white/70">
+      <span>{{ clockText(currentTime()) }}</span>
+      <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
+             [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
+      <span>{{ clockText(duration()) }}</span>
     </div>
-  }
+    <div class="flex items-center justify-center gap-4">
+      <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
+      <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
+        {{ isPlaying() ? '❚❚' : '▶' }}
+      </button>
+      <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+    </div>
+    <p class="line-clamp-1 text-center text-base text-white/60">{{ video().channelTitle }}</p>
+  </div>
 </div>

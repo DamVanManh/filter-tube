@@ -3,7 +3,6 @@ import { CapacitorHttp } from '@capacitor/core';
 import { environment } from '../../environments/environment';
 import { ChannelStats, TrustedChannel, Video, VideoOrigin } from './models';
 import { parseChannelReference } from './channel-reference';
-import { SearchOrder } from './topic-rotation';
 import { parseIsoDurationSeconds } from './text';
 
 const API_BASE = 'https://www.googleapis.com/youtube/v3';
@@ -36,6 +35,7 @@ interface ApiVideo {
     readonly publishedAt: string;
     readonly thumbnails: ApiThumbnails;
     readonly defaultAudioLanguage?: string;
+    readonly categoryId?: string;
   };
   readonly contentDetails: { readonly duration: string };
   readonly status: { readonly embeddable?: boolean; readonly madeForKids?: boolean; readonly privacyStatus?: string };
@@ -91,7 +91,7 @@ export class YoutubeApi {
     return (res.items ?? []).map((i) => i.contentDetails.videoId);
   }
 
-  async searchVideoIds(query: string, max: number, publishedAfter: Date, order: SearchOrder): Promise<string[]> {
+  async searchVideoIds(query: string, max: number, publishedAfter: Date): Promise<string[]> {
     const res = await this.get<ListResponse<{ id: { videoId?: string } }>>('search', {
       part: 'id',
       q: query,
@@ -103,7 +103,7 @@ export class YoutubeApi {
       videoEmbeddable: 'true',
       videoSyndicated: 'true',
       publishedAfter: publishedAfter.toISOString(),
-      order,
+      order: 'relevance',
     });
     return (res.items ?? []).flatMap((i) => (i.id.videoId ? [i.id.videoId] : []));
   }
@@ -127,6 +127,7 @@ export class YoutubeApi {
         durationSeconds: parseIsoDurationSeconds(v.contentDetails.duration),
         madeForKids: v.status.madeForKids === true,
         audioLanguage: v.snippet.defaultAudioLanguage ?? null,
+        categoryId: v.snippet.categoryId ?? null,
         embeddable: v.status.embeddable !== false,
         origin: source.origin,
         topicId: source.topicId,

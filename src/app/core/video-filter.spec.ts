@@ -16,6 +16,7 @@ function video(overrides: Partial<Video> = {}): Video {
     durationSeconds: 600,
     madeForKids: false,
     audioLanguage: null,
+    categoryId: '26',
     embeddable: true,
     origin: VIDEO_ORIGIN.TOPIC,
     topicId: 'nau-an',
@@ -40,14 +41,29 @@ describe('rejectReason', () => {
 
   it('rejects foreign-language videos, trusting the declared audio language first', () => {
     expect(rejectOf(video({ title: 'No Husband, No Easy Life – A Betrayed Nurse' }))).toBe(REJECT_REASON.NOT_VIETNAMESE);
-    expect(rejectOf(video({ title: 'Mon ngon', audioLanguage: 'vi' }))).toBeNull();
+    expect(rejectOf(video({ title: 'Món ngon', audioLanguage: 'vi' }))).toBeNull();
+    expect(rejectOf(video({ title: 'No Husband, No Easy Life', audioLanguage: 'vi' }))).toBe(REJECT_REASON.NOT_VIETNAMESE);
     expect(rejectOf(video({ title: 'Món ngon mỗi ngày', audioLanguage: 'en-US' }))).toBe(REJECT_REASON.NOT_VIETNAMESE);
-    expect(rejectOf(video({ title: 'Recipe', audioLanguage: 'VI' }))).toBeNull();
+    expect(rejectOf(video({ title: 'Món ăn', audioLanguage: 'VI' }))).toBeNull();
   });
 
   it('can turn the Vietnamese requirement off', () => {
     const settings = { ...DEFAULT_SETTINGS, language: { requireVietnamese: false } };
     expect(rejectOf(video({ title: 'A calm cooking video' }), BIG_OLD_CHANNEL, settings)).toBeNull();
+  });
+
+  it('rejects entertainment, film, news, comedy and gaming categories from unknown channels only', () => {
+    for (const categoryId of ['1', '20', '23', '24', '25', '44']) {
+      expect(rejectOf(video({ categoryId }))).toBe(REJECT_REASON.BLOCKED_CATEGORY);
+    }
+    expect(rejectOf(video({ categoryId: '10' }))).toBeNull();
+    expect(rejectOf(video({ categoryId: null }))).toBeNull();
+    expect(rejectOf(video({ categoryId: '24', origin: VIDEO_ORIGIN.TRUSTED_CHANNEL }))).toBeNull();
+  });
+
+  it('rejects AI story recaps by their vocabulary', () => {
+    expect(rejectOf(video({ title: 'Thần Y Bị Ruồng Bỏ | Full Có Kết | ChipChip Review' }))).toBe(REJECT_REASON.BANNED_KEYWORD);
+    expect(rejectOf(video({ title: 'Xuyên Thành Ác Nữ Nông Thôn: Chị Cả Dẫn Cả Nhà Giàu Có' }))).toBe(REJECT_REASON.BANNED_KEYWORD);
   });
 
   it('rejects non-embeddable videos because the app cannot play them', () => {

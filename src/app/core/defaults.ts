@@ -1,5 +1,14 @@
 import { Settings } from './models';
 
+export const YOUTUBE_CATEGORY = {
+  FILM_AND_ANIMATION: '1',
+  GAMING: '20',
+  COMEDY: '23',
+  ENTERTAINMENT: '24',
+  NEWS_AND_POLITICS: '25',
+  TRAILERS: '44',
+} as const;
+
 export const DEFAULT_SETTINGS: Settings = {
   trustedChannels: [],
   topics: [
@@ -19,6 +28,10 @@ export const DEFAULT_SETTINGS: Settings = {
     'cảnh báo', 'nguy hại', 'sai lầm', 'chữa bệnh', 'chữa khỏi', 'bài thuốc', 'thần dược',
     'khỏi hẳn', 'không cần thuốc', 'bác sĩ cũng', 'dự án tỷ đô', 'bất động sản', 'kiếm tiền',
     'đầu tư', 'tiền ảo', 'lừa đảo', 'vạch trần',
+    'xuyên không', 'xuyên thành', 'trọng sinh', 'ngôn tình', 'tổng tài', 'full có kết', 'full bộ',
+    'review truyện', 'truyện audio', 'thần y', 'bá đạo', 'ác nữ', 'nữ phụ', 'phản diện', 'review phim',
+    'tóm tắt phim', 'thế giới ngả mũ', 'thán phục',
+    'chữa', 'trị dứt', 'dứt điểm', 'hết đau', 'hết bệnh', 'sống được bao lâu', 'dấu hiệu này',
   ],
   blockedChannels: [],
   thresholds: {
@@ -28,4 +41,12 @@ export const DEFAULT_SETTINGS: Settings = {
     maxUppercaseRatio: 0.5,
   },
   language: { requireVietnamese: true },
+  blockedCategoryIds: [
+    YOUTUBE_CATEGORY.FILM_AND_ANIMATION,
+    YOUTUBE_CATEGORY.GAMING,
+    YOUTUBE_CATEGORY.COMEDY,
+    YOUTUBE_CATEGORY.ENTERTAINMENT,
+    YOUTUBE_CATEGORY.NEWS_AND_POLITICS,
+    YOUTUBE_CATEGORY.TRAILERS,
+  ],
 };

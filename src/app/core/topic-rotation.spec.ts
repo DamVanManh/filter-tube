@@ -1,19 +1,19 @@
 import { Video, VIDEO_ORIGIN } from './models';
-import { SEARCH_ORDER, mergeTopicVideos, searchOrderFor } from './topic-rotation';
+import { mergeTopicVideos, searchWindowDaysFor } from './topic-rotation';
 
 function video(id: string, title = id): Video {
   return {
     id, title, channelId: 'c', channelTitle: 'c', thumbnailUrl: '', publishedAt: '2026-09-01T00:00:00Z',
-    durationSeconds: 600, madeForKids: false, audioLanguage: null, embeddable: true, origin: VIDEO_ORIGIN.TOPIC, topicId: 't',
+    durationSeconds: 600, madeForKids: false, audioLanguage: null, categoryId: null, embeddable: true, origin: VIDEO_ORIGIN.TOPIC, topicId: 't',
   };
 }
 
-describe('searchOrderFor', () => {
-  it('alternates between relevance and newest every six hours', () => {
+describe('searchWindowDaysFor', () => {
+  it('alternates between the last year and the last two months every six hours', () => {
     const sixHours = 6 * 3_600_000;
-    expect(searchOrderFor(0)).toBe(SEARCH_ORDER.RELEVANCE);
-    expect(searchOrderFor(sixHours)).toBe(SEARCH_ORDER.DATE);
-    expect(searchOrderFor(2 * sixHours)).toBe(SEARCH_ORDER.RELEVANCE);
+    expect(searchWindowDaysFor(0)).toBe(365);
+    expect(searchWindowDaysFor(sixHours)).toBe(60);
+    expect(searchWindowDaysFor(2 * sixHours)).toBe(365);
   });
 });
 

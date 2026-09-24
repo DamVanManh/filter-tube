@@ -1,16 +1,10 @@
 import { Video } from './models';
 
-export const SEARCH_ORDER = {
-  RELEVANCE: 'relevance',
-  DATE: 'date',
-} as const;
-export type SearchOrder = (typeof SEARCH_ORDER)[keyof typeof SEARCH_ORDER];
-
 const ROTATION_PERIOD_MS = 6 * 3_600_000;
-const ROTATION: readonly SearchOrder[] = [SEARCH_ORDER.RELEVANCE, SEARCH_ORDER.DATE];
+const SEARCH_WINDOWS_DAYS: readonly number[] = [365, 60];
 
-export function searchOrderFor(nowMs: number): SearchOrder {
-  return ROTATION[Math.floor(nowMs / ROTATION_PERIOD_MS) % ROTATION.length] ?? SEARCH_ORDER.RELEVANCE;
+export function searchWindowDaysFor(nowMs: number): number {
+  return SEARCH_WINDOWS_DAYS[Math.floor(nowMs / ROTATION_PERIOD_MS) % SEARCH_WINDOWS_DAYS.length] ?? 365;
 }
 
 export function mergeTopicVideos(fresh: readonly Video[], previous: readonly Video[], max: number): Video[] {

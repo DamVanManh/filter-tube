@@ -25,6 +25,10 @@ export function rejectReason(
     settings.trustedChannels.some((c) => c.id === video.channelId);
   if (isTrusted) return null;
 
+  if (video.categoryId !== null && settings.blockedCategoryIds.includes(video.categoryId)) {
+    return REJECT_REASON.BLOCKED_CATEGORY;
+  }
+
   if (!stats || stats.subscriberCount === null || stats.subscriberCount < thresholds.minSubscribersForUnknownChannel) {
     return REJECT_REASON.CHANNEL_TOO_SMALL;
   }
@@ -33,12 +37,12 @@ export function rejectReason(
   return null;
 }
 
-const VIETNAMESE_ONLY_LETTERS = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/iu;
+const VIETNAMESE_LETTERS = /[àáâãèéêìíòóôõùúýăđĩũơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/iu;
 const VIETNAMESE_LANGUAGE_PREFIX = 'vi';
 
 export function looksVietnamese(video: Pick<Video, 'title' | 'audioLanguage'>): boolean {
-  if (video.audioLanguage) return video.audioLanguage.toLowerCase().startsWith(VIETNAMESE_LANGUAGE_PREFIX);
-  return VIETNAMESE_ONLY_LETTERS.test(video.title);
+  const declaredForeign = video.audioLanguage !== null && !video.audioLanguage.toLowerCase().startsWith(VIETNAMESE_LANGUAGE_PREFIX);
+  return !declaredForeign && VIETNAMESE_LETTERS.test(video.title);
 }
 
 export function containsBannedKeyword(text: string, bannedKeywords: readonly string[]): boolean {

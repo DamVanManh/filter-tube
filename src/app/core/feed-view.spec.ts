@@ -19,6 +19,7 @@ function video(id: string, overrides: Partial<Video> = {}): Video {
     durationSeconds: 600,
     madeForKids: false,
     audioLanguage: null,
+    categoryId: '26',
     embeddable: true,
     origin: VIDEO_ORIGIN.TOPIC,
     topicId: 'nau-an',

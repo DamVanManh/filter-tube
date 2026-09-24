@@ -10,6 +10,9 @@ export interface YtPlayer {
   playVideo(): void;
   pauseVideo(): void;
   loadVideoById(id: string): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  getCurrentTime(): number;
+  getDuration(): number;
   destroy(): void;
 }
 
@@ -62,6 +65,7 @@ export function createPlayer(yt: YtNamespace, element: HTMLElement, videoId: str
     height: '100%',
     playerVars: {
       autoplay: 1,
+      controls: 0,
       rel: 0,
       fs: 0,
       iv_load_policy: 3,
