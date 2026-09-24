@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kênh của Mẹ</string>
+    <string name="title_activity_main">Kênh của Mẹ</string>
+    <string name="package_name">vn.kenhcuame.app</string>
+    <string name="custom_url_scheme">vn.kenhcuame.app</string>
+</resources>

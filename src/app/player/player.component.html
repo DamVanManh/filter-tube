@@ -1,0 +1,65 @@
+<div class="fixed inset-0 z-40 flex flex-col bg-black">
+  <div class="relative flex-1">
+    <div #playerHost class="absolute inset-0"></div>
+
+    <div class="absolute inset-x-0 top-0 h-16" (click)="pause()"></div>
+    <div class="absolute bottom-0 right-0 h-14 w-28" (click)="pause()"></div>
+
+    @switch (overlay()) {
+      @case (OVERLAY.PAUSED) {
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/90 p-6 text-center">
+          <p class="line-clamp-2 max-w-2xl text-xl font-semibold">{{ video().title }}</p>
+          <button type="button" class="btn-primary px-10 text-2xl" (click)="resume()">▶ Xem tiếp</button>
+          <div class="flex flex-wrap justify-center gap-3">
+            <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
+            <button type="button" class="btn-ghost" (click)="askBlock()">🚫 Không xem kênh này nữa</button>
+          </div>
+        </div>
+      }
+      @case (OVERLAY.ENDED) {
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black p-6 text-center">
+          @if (nextVideo(); as next) {
+            <p class="text-white/70">Video tiếp theo sau {{ countdown() }} giây</p>
+            <img [src]="next.thumbnailUrl" alt="" class="aspect-video w-full max-w-md rounded-2xl object-cover" />
+            <p class="line-clamp-2 max-w-md text-xl font-semibold">{{ next.title }}</p>
+            <div class="flex flex-wrap justify-center gap-3">
+              <button type="button" class="btn-primary" (click)="goNext()">▶ Xem ngay</button>
+              <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
+            </div>
+          } @else {
+            <p class="text-xl">Đã xem hết video</p>
+            <button type="button" class="btn-primary" (click)="close()">← Về danh sách</button>
+          }
+        </div>
+      }
+      @case (OVERLAY.CONFIRM_BLOCK) {
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/95 p-6 text-center">
+          <p class="text-xl">Ẩn mọi video của kênh <b>{{ video().channelTitle }}</b>?</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <button type="button" class="btn-primary" (click)="confirmBlock()">Ẩn kênh này</button>
+            <button type="button" class="btn-ghost" (click)="cancelBlock()">Thôi</button>
+          </div>
+        </div>
+      }
+      @case (OVERLAY.LOAD_ERROR) {
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black p-6 text-center">
+          <p class="text-xl">Không phát được video này.</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            @if (nextVideo()) {
+              <button type="button" class="btn-primary" (click)="goNext()">Xem video khác</button>
+            }
+            <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  @if (overlay() === OVERLAY.NONE) {
+    <div class="safe-bottom flex items-center justify-between gap-3 bg-neutral-900 px-4 py-2">
+      <button type="button" class="btn-ghost" (click)="close()">← Danh sách</button>
+      <p class="line-clamp-1 flex-1 text-base text-white/80">{{ video().channelTitle }}</p>
+      <button type="button" class="btn-ghost" (click)="pause()">⏸ Dừng</button>
+    </div>
+  }
+</div>

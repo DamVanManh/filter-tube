@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "jest",
+    "apk": "ng build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "private": true,
   "dependencies": {
@@ -17,6 +18,10 @@
     "@angular/platform-browser": "^19.2.0",
     "@angular/platform-browser-dynamic": "^19.2.0",
     "@angular/router": "^19.2.0",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/preferences": "8.0.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -25,13 +30,21 @@
     "@angular-devkit/build-angular": "^19.2.27",
     "@angular/cli": "^19.2.27",
     "@angular/compiler-cli": "^19.2.0",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "8.5.2",
     "@types/jasmine": "~5.1.0",
+    "@types/jest": "29",
+    "autoprefixer": "^10.6.1",
     "jasmine-core": "~5.6.0",
+    "jest": "29",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "3.4.7",
+    "ts-jest": "29",
     "typescript": "~5.7.2"
   }
 }

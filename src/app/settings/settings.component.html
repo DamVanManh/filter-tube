@@ -1,0 +1,111 @@
+<div class="fixed inset-0 z-50 overflow-y-auto bg-neutral-950">
+  <div class="safe-top safe-bottom mx-auto flex max-w-2xl flex-col gap-6 px-4 py-4">
+    <header class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl font-bold">Cài đặt</h1>
+      <button type="button" class="btn-ghost" (click)="closed.emit()">Đóng</button>
+    </header>
+
+    @if (message(); as msg) {
+      <p class="rounded-xl bg-white/10 px-4 py-3">{{ msg }}</p>
+    }
+
+    @if (lock() !== LOCK.OPEN) {
+      <form class="flex flex-col gap-3" (ngSubmit)="submitPin()">
+        <label for="pin" class="text-lg">
+          {{ lock() === LOCK.CREATE ? 'Tạo mã PIN để khóa cài đặt' : 'Nhập mã PIN' }}
+        </label>
+        <input id="pin" name="pin" class="field text-center text-2xl tracking-[0.5em]" type="password"
+               inputmode="numeric" autocomplete="off" [(ngModel)]="pin" />
+        <button type="submit" class="btn-primary">Mở</button>
+      </form>
+    } @else {
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Kênh tin cậy</h2>
+        <p class="text-base text-white/60">Video mới của các kênh này luôn hiện, không cần qua ngưỡng kênh lạ.</p>
+        <form class="flex gap-2" (ngSubmit)="addChannel()">
+          <input name="channel" class="field" placeholder="Link kênh hoặc @tên_kênh" [(ngModel)]="channelInput" />
+          <button type="submit" class="btn-primary shrink-0" [disabled]="busy()">Thêm</button>
+        </form>
+        <ul class="flex flex-col gap-2">
+          @for (c of store.settings().trustedChannels; track c.id) {
+            <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">
+              <span class="line-clamp-1">{{ c.title }}</span>
+              <button type="button" class="btn-ghost shrink-0" (click)="removeChannel(c.id)">Xóa</button>
+            </li>
+          } @empty {
+            <li class="text-white/50">Chưa có kênh nào.</li>
+          }
+        </ul>
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Chủ đề</h2>
+        <p class="text-base text-white/60">Mỗi chủ đề là một tab. "Từ khóa tìm" càng cụ thể, video càng đúng ý.</p>
+        <form class="flex flex-col gap-2" (ngSubmit)="addTopic()">
+          <input name="topicLabel" class="field" placeholder="Tên tab, ví dụ: Cải lương" [(ngModel)]="topicLabel" />
+          <input name="topicQuery" class="field" placeholder="Từ khóa tìm, ví dụ: trích đoạn cải lương xưa" [(ngModel)]="topicQuery" />
+          <button type="submit" class="btn-primary">Thêm chủ đề</button>
+        </form>
+        <ul class="flex flex-col gap-2">
+          @for (t of store.settings().topics; track t.id) {
+            <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">
+              <span class="min-w-0"><b>{{ t.label }}</b> <span class="text-white/50">— {{ t.query }}</span></span>
+              <button type="button" class="btn-ghost shrink-0" (click)="removeTopic(t.id)">Xóa</button>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Từ cấm</h2>
+        <p class="text-base text-white/60">Video có từ này trong tiêu đề hoặc tên kênh sẽ bị ẩn. Gõ không dấu để chặn cả bản có dấu và không dấu.</p>
+        <form class="flex gap-2" (ngSubmit)="addKeywords()">
+          <input name="keyword" class="field" placeholder="Nhiều từ cách nhau bằng dấu phẩy" [(ngModel)]="keywordInput" />
+          <button type="submit" class="btn-primary shrink-0">Thêm</button>
+        </form>
+        <div class="flex flex-wrap gap-2">
+          @for (w of store.settings().bannedKeywords; track w) {
+            <button type="button" class="rounded-full bg-white/10 px-3 py-1 text-base" (click)="removeKeyword(w)">{{ w }} ✕</button>
+          }
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Kênh đã chặn</h2>
+        <ul class="flex flex-col gap-2">
+          @for (c of store.settings().blockedChannels; track c.id) {
+            <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">
+              <span class="line-clamp-1">{{ c.title }}</span>
+              <button type="button" class="btn-ghost shrink-0" (click)="unblockChannel(c.id)">Bỏ chặn</button>
+            </li>
+          } @empty {
+            <li class="text-white/50">Chưa chặn kênh nào.</li>
+          }
+        </ul>
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Ngưỡng lọc</h2>
+        @for (f of THRESHOLD_FIELDS; track f.key) {
+          <label class="flex items-center justify-between gap-3">
+            <span class="text-base">{{ f.label }}</span>
+            <input class="field w-32 text-right" type="number" min="0" [step]="f.step"
+                   [value]="store.settings().thresholds[f.key]"
+                   (change)="setThreshold(f.key, $any($event.target).value)" />
+          </label>
+        }
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Sao lưu</h2>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-ghost" (click)="exportSettings()">Xuất cài đặt</button>
+          <button type="button" class="btn-ghost" (click)="importSettings()">Nạp từ ô dưới</button>
+          <button type="button" class="btn-ghost" (click)="changePin()">Đổi mã PIN</button>
+        </div>
+        <textarea name="import" class="field h-40 font-mono text-sm" [(ngModel)]="importText"
+                  placeholder="Dán bản sao lưu vào đây rồi bấm Nạp"></textarea>
+      </section>
+    }
+  </div>
+</div>
