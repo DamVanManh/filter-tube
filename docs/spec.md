@@ -36,7 +36,8 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   tạm dừng). Các nút chia cột theo độ rộng màn hình, chữ xuống dòng khi màn hình hẹp — không bao giờ
   tràn/cắt mép. Màn hình hẹp hơn 380px (hoặc cỡ chữ từ "Rất lớn") thì đầu trang chỉ hiện logo.
 - Tạm dừng KHÔNG che video — khung hình đang dừng hiện rõ để đọc; chạm video để phát tiếp.
-- Toàn màn hình: xoay ngang, ẩn thanh hệ thống; chạm video để hiện nút (tự ẩn sau 6 giây); "Thu nhỏ"
+- Toàn màn hình: xoay ngang, ẩn thanh hệ thống; chạm video để hiện nút (tự ẩn sau 6 giây) — thanh nút
+  trong suốt (nền mờ dần, nút bán trong suốt) để vẫn nhìn thấy video phía sau; "Thu nhỏ"
   hoặc Back để thoát. Đang phát mà không chạm gì ⇒ tự vào toàn màn hình (mặc định 60 giây, chỉnh trong
   Cài đặt, 0 = tắt).
 - Phụ đề (CC): mặc định TẮT; bật trong Cài đặt thì hiện phụ đề (ưu tiên tiếng Việt).

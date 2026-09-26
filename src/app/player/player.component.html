@@ -35,20 +35,21 @@
     }
 
     @if (isFullscreen() && fullscreenControlsVisible() && overlay() === OVERLAY.NONE) {
-      <div class="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-neutral-950 px-6 pb-5 pt-4">
-        <div class="flex items-center gap-3 text-base tabular-nums text-white/80">
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-t from-black/60 via-black/25 to-transparent px-6 pb-5 pt-16 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+           data-testid="fullscreen-controls">
+        <div class="pointer-events-auto flex items-center gap-3 text-base tabular-nums text-white">
           <span>{{ clockText(currentTime()) }}</span>
           <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
                  [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
           <span>{{ clockText(duration()) }}</span>
         </div>
-        <div class="flex items-center justify-center gap-4">
-          <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
-          <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
+        <div class="pointer-events-auto flex items-center justify-center gap-4">
+          <button type="button" class="btn w-24 bg-black/30 text-white ring-1 ring-white/25 backdrop-blur-sm" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
+          <button type="button" class="btn w-28 bg-brand/70 text-2xl text-white backdrop-blur-sm" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
             {{ isPlaying() ? '❚❚' : '▶' }}
           </button>
-          <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
-          <button type="button" class="btn-ghost px-6 text-xl" (click)="exitFullscreen()">⤡ Thu nhỏ</button>
+          <button type="button" class="btn w-24 bg-black/30 text-white ring-1 ring-white/25 backdrop-blur-sm" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+          <button type="button" class="btn bg-black/30 px-6 text-xl text-white ring-1 ring-white/25 backdrop-blur-sm" (click)="exitFullscreen()">⤡ Thu nhỏ</button>
         </div>
       </div>
     }
