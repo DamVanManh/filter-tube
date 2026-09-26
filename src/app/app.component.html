@@ -1,4 +1,4 @@
-<header class="safe-top sticky top-0 z-30 bg-neutral-950/95 backdrop-blur">
+<header class="safe-top sticky top-0 z-20 bg-neutral-950/95 backdrop-blur">
   <div class="flex items-center gap-3 px-4 pt-3">
     <svg viewBox="0 0 28 20" class="h-7 w-10 shrink-0" aria-hidden="true">
       <rect width="28" height="20" rx="5" fill="#ff0033" />
@@ -10,46 +10,64 @@
     </button>
     <button type="button" class="btn-ghost px-3" (click)="settingsOpen.set(true)" aria-label="Cài đặt">⚙</button>
   </div>
-  <nav class="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none]">
-    @for (tab of tabs(); track tab.id) {
-      <button
-        type="button"
-        class="shrink-0 rounded-full px-5 py-2 text-lg font-semibold transition"
-        [class]="tab.id === selectedTab() ? 'bg-white text-black' : 'bg-white/10 text-white'"
-        (click)="selectTab(tab.id)"
-      >
-        {{ tab.label }}
-      </button>
+
+  <form class="flex gap-2 px-4 pt-3" role="search" (ngSubmit)="submitSearch()">
+    <input name="search" type="text" enterkeyhint="search" autocomplete="off" class="field text-lg"
+           placeholder="🔍 Tìm video…" aria-label="Tìm video" [(ngModel)]="searchText" />
+    @if (search.isActive()) {
+      <button type="button" class="btn-ghost shrink-0 px-4" (click)="clearSearch()" aria-label="Xóa tìm kiếm">✕</button>
+    } @else {
+      <button type="submit" class="btn-primary shrink-0 px-4">Tìm</button>
     }
-  </nav>
+  </form>
+
+  @if (!search.isActive()) {
+    <nav class="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none]">
+      @for (tab of tabs(); track tab.id) {
+        <button
+          type="button"
+          class="shrink-0 rounded-full px-5 py-2 text-lg font-semibold transition"
+          [class]="tab.id === selectedTab() ? 'bg-white text-black' : 'bg-white/10 text-white'"
+          (click)="selectTab(tab.id)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+  } @else {
+    <p class="px-4 py-3 text-lg text-white/70">Kết quả cho “{{ search.query() }}”</p>
+  }
 </header>
 
 <main class="safe-bottom px-4 pb-8">
-  @if (errorText(); as text) {
-    <p class="mb-4 rounded-xl bg-amber-500/15 px-4 py-3 text-amber-200">{{ text }}</p>
-  }
-
   @if (!ready()) {
     <p class="py-20 text-center text-white/60">Đang mở…</p>
+  } @else if (search.isActive()) {
+    @if (searchStateText(); as text) {
+      <p class="mb-4 rounded-xl bg-amber-500/15 px-4 py-3 text-amber-200">{{ text }}</p>
+    }
+    @if (search.state() === SEARCH_STATE.LOADING) {
+      <p class="py-20 text-center text-white/60">Đang tìm…</p>
+    } @else {
+      <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @for (video of search.videos(); track video.id) {
+          <li><app-video-card [video]="video" [watched]="watchedIds().has(video.id)" (chosen)="playFromFeed(video, search.videos())" /></li>
+        } @empty {
+          @if (search.state() === SEARCH_STATE.DONE) {
+            <li class="col-span-full py-16 text-center text-lg text-white/60">
+              Không có video phù hợp. Thử từ khóa khác, cụ thể hơn.
+            </li>
+          }
+        }
+      </ul>
+    }
   } @else {
+    @if (errorText(); as text) {
+      <p class="mb-4 rounded-xl bg-amber-500/15 px-4 py-3 text-amber-200">{{ text }}</p>
+    }
     <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      @for (video of videos(); track video.id) {
-        <li>
-          <button type="button" class="block w-full text-left active:opacity-70" (click)="play(video)">
-            <div class="relative overflow-hidden rounded-2xl bg-white/5">
-              <img [src]="video.thumbnailUrl" alt="" loading="lazy" class="aspect-video w-full object-cover"
-                   [class.opacity-50]="watchedIds().has(video.id)" />
-              <span class="absolute bottom-2 right-2 rounded-lg bg-black/80 px-2 py-0.5 text-base font-semibold">
-                {{ formatDuration(video.durationSeconds) }}
-              </span>
-              @if (watchedIds().has(video.id)) {
-                <span class="absolute left-2 top-2 rounded-lg bg-black/80 px-2 py-0.5 text-base">Đã xem</span>
-              }
-            </div>
-            <p class="mt-2 line-clamp-2 text-xl font-semibold leading-snug">{{ video.title }}</p>
-            <p class="mt-1 text-lg text-white/60">{{ video.channelTitle }}</p>
-          </button>
-        </li>
+      @for (video of feedVideos(); track video.id) {
+        <li><app-video-card [video]="video" [watched]="watchedIds().has(video.id)" (chosen)="playFromFeed(video, feedVideos())" /></li>
       } @empty {
         <li class="col-span-full py-20 text-center text-white/60">
           {{ feed.loading() ? 'Đang tải video…' : 'Chưa có video. Bấm ⟳ để tải.' }}
@@ -59,15 +77,36 @@
   }
 </main>
 
+@if (channelView(); as channel) {
+  <app-channel-page [channel]="channel" (closed)="closeChannel()" (play)="play($event)" />
+}
+
 @if (playing(); as video) {
   <app-player
     [video]="video"
     [nextVideo]="nextVideo()"
     (closed)="closePlayer()"
     (watched)="markWatched($event)"
-    (playNext)="play($event)"
-    (blockChannel)="blockChannel($event)"
+    (playNext)="playNext($event)"
+    (openChannel)="openChannel($event)"
   />
+}
+
+@if (lockWarning(); as minutes) {
+  <p role="status" class="safe-top pointer-events-none fixed inset-x-0 top-0 z-[46] bg-sky-900/95 px-4 py-3 text-center text-lg font-semibold text-white">
+    Còn {{ minutes }} phút nữa là đến giờ nghỉ ({{ quietHours().start }})
+  </p>
+}
+
+@if (isLocked()) {
+  <div class="safe-top safe-bottom fixed inset-0 z-[45] flex flex-col items-center justify-center gap-6 bg-neutral-950 px-6 text-center">
+    <p class="text-6xl" aria-hidden="true">🌙</p>
+    <h2 class="text-3xl font-bold">Đến giờ nghỉ rồi</h2>
+    <p class="max-w-md text-xl text-white/70">
+      App sẽ mở lại lúc <b class="text-white">{{ quietHours().end }}</b>. Chúc ngủ ngon!
+    </p>
+    <button type="button" class="btn-ghost mt-8 text-base" (click)="settingsOpen.set(true)">Cài đặt (cần mã PIN)</button>
+  </div>
 }
 
 @if (settingsOpen()) {

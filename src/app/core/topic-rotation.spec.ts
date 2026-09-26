@@ -9,11 +9,10 @@ function video(id: string, title = id): Video {
 }
 
 describe('searchWindowDaysFor', () => {
-  it('alternates between the last year and the last two months every six hours', () => {
-    const sixHours = 6 * 3_600_000;
-    expect(searchWindowDaysFor(0)).toBe(365);
-    expect(searchWindowDaysFor(sixHours)).toBe(60);
-    expect(searchWindowDaysFor(2 * sixHours)).toBe(365);
+  it('cycles the last year, month and week every four hours so fresh videos keep arriving', () => {
+    const period = 4 * 3_600_000;
+    expect([0, 1, 2, 3].map((n) => searchWindowDaysFor(n * period))).toEqual([365, 30, 7, 365]);
+    expect(searchWindowDaysFor(period - 1)).toBe(365);
   });
 });
 

@@ -1,31 +1,33 @@
 <div class="fixed inset-0 z-40 flex flex-col bg-black">
-  <div class="safe-top flex items-center gap-3 bg-neutral-900 px-4 py-2">
-    <button type="button" class="btn-ghost shrink-0" (click)="close()">← Danh sách</button>
-    <p class="line-clamp-2 min-w-0 flex-1 text-base leading-snug text-white/80">{{ video().title }}</p>
-  </div>
+  @if (!isFullscreen()) {
+    <div class="safe-top flex items-center gap-3 bg-neutral-900 px-4 py-2">
+      <button type="button" class="btn-ghost shrink-0" (click)="close()">← Danh sách</button>
+    </div>
+  }
 
-  <div class="relative flex flex-1 items-center justify-center">
-    <div class="relative aspect-video max-h-full w-full">
+  <div [class]="isFullscreen() ? 'absolute inset-0 flex items-center justify-center bg-black' : 'relative shrink-0'">
+    <div class="relative aspect-video max-h-full max-w-full" [class]="isFullscreen() ? 'h-full' : 'w-full'">
       <div #playerHost class="absolute inset-0"></div>
-      <div class="absolute inset-0" data-testid="tap-shield" (click)="togglePlay()"></div>
+      <div class="absolute inset-0" data-testid="tap-shield" (click)="onVideoTap()"></div>
     </div>
 
     @switch (overlay()) {
       @case (OVERLAY.PAUSED) {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/90 p-6 text-center">
-          <p class="line-clamp-2 max-w-2xl text-xl font-semibold">{{ video().title }}</p>
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/90 p-4 text-center">
           <button type="button" class="btn-primary px-10 text-2xl" (click)="resume()">▶ Xem tiếp</button>
           <div class="flex flex-wrap justify-center gap-3">
-            <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
-            <button type="button" class="btn-ghost" (click)="askBlock()">🚫 Không xem kênh này nữa</button>
+            @if (isFullscreen()) {
+              <button type="button" class="btn-ghost" (click)="exitFullscreen()">Thu nhỏ màn hình</button>
+            } @else {
+              <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
+            }
           </div>
         </div>
       }
       @case (OVERLAY.ENDED) {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black p-6 text-center">
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-hidden bg-black p-4 text-center">
           @if (nextVideo(); as next) {
             <p class="text-white/70">Video tiếp theo sau {{ countdown() }} giây</p>
-            <img [src]="next.thumbnailUrl" alt="" class="aspect-video w-full max-w-md rounded-2xl object-cover" />
             <p class="line-clamp-2 max-w-md text-xl font-semibold">{{ next.title }}</p>
             <div class="flex flex-wrap justify-center gap-3">
               <button type="button" class="btn-primary" (click)="goNext()">▶ Xem ngay</button>
@@ -37,17 +39,8 @@
           }
         </div>
       }
-      @case (OVERLAY.CONFIRM_BLOCK) {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/95 p-6 text-center">
-          <p class="text-xl">Ẩn mọi video của kênh <b>{{ video().channelTitle }}</b>?</p>
-          <div class="flex flex-wrap justify-center gap-3">
-            <button type="button" class="btn-primary" (click)="confirmBlock()">Ẩn kênh này</button>
-            <button type="button" class="btn-ghost" (click)="cancelBlock()">Thôi</button>
-          </div>
-        </div>
-      }
       @case (OVERLAY.LOAD_ERROR) {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black p-6 text-center">
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black p-4 text-center">
           <p class="text-xl">Không phát được video này.</p>
           <div class="flex flex-wrap justify-center gap-3">
             @if (nextVideo()) {
@@ -58,22 +51,59 @@
         </div>
       }
     }
+
+    @if (isFullscreen() && fullscreenControlsVisible() && overlay() === OVERLAY.NONE) {
+      <div class="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-neutral-950 px-6 pb-5 pt-4">
+        <div class="flex items-center gap-3 text-base tabular-nums text-white/80">
+          <span>{{ clockText(currentTime()) }}</span>
+          <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
+                 [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
+          <span>{{ clockText(duration()) }}</span>
+        </div>
+        <div class="flex items-center justify-center gap-4">
+          <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
+          <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
+            {{ isPlaying() ? '❚❚' : '▶' }}
+          </button>
+          <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+          <button type="button" class="btn-ghost px-6 text-xl" (click)="exitFullscreen()">⤡ Thu nhỏ</button>
+        </div>
+      </div>
+    }
   </div>
 
-  <div class="safe-bottom flex flex-col gap-3 bg-neutral-900 px-4 pb-4 pt-3">
-    <div class="flex items-center gap-3 text-base tabular-nums text-white/70">
-      <span>{{ clockText(currentTime()) }}</span>
-      <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
-             [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
-      <span>{{ clockText(duration()) }}</span>
+  @if (!isFullscreen()) {
+    <div class="flex shrink-0 flex-col gap-3 bg-neutral-900 px-4 pb-4 pt-3">
+      <div class="flex items-center gap-3 text-base tabular-nums text-white/70">
+        <span>{{ clockText(currentTime()) }}</span>
+        <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
+               [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
+        <span>{{ clockText(duration()) }}</span>
+      </div>
+      <div class="flex items-center justify-center gap-4">
+        <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
+        <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
+          {{ isPlaying() ? '❚❚' : '▶' }}
+        </button>
+        <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+      </div>
+      <button type="button" class="btn-ghost w-full py-4 text-xl" (click)="enterFullscreen()">⛶ Xem toàn màn hình</button>
     </div>
-    <div class="flex items-center justify-center gap-4">
-      <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
-      <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
-        {{ isPlaying() ? '❚❚' : '▶' }}
+
+    <div class="safe-bottom flex-1 overflow-y-auto px-4 pb-8 pt-4">
+      <h1 class="text-xl font-bold leading-snug">{{ video().title }}</h1>
+      <p class="mt-1 text-base text-white/60">{{ relativeTime(video().publishedAt) }}</p>
+      <button type="button" class="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left active:opacity-70"
+              (click)="showChannel()">
+        <span class="min-w-0">
+          <span class="block text-base text-white/60">Kênh</span>
+          <span class="block truncate text-xl font-semibold">{{ video().channelTitle }}</span>
+        </span>
+        <span class="shrink-0 text-lg font-semibold text-sky-300">Xem kênh ›</span>
       </button>
-      <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+      <div class="mt-6">
+        <app-comments [videoId]="video().id" />
+      </div>
     </div>
-    <p class="line-clamp-1 text-center text-base text-white/60">{{ video().channelTitle }}</p>
-  </div>
+  }
 </div>

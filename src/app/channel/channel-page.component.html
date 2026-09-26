@@ -1,0 +1,45 @@
+<div class="fixed inset-0 z-30 overflow-y-auto bg-neutral-950">
+  <header class="safe-top sticky top-0 z-10 flex items-center gap-3 bg-neutral-950/95 px-4 py-3 backdrop-blur">
+    <button type="button" class="btn-ghost shrink-0" (click)="closed.emit()">← Quay lại</button>
+    <h1 class="min-w-0 flex-1 truncate text-xl font-bold">{{ profile()?.title ?? channel().title }}</h1>
+  </header>
+
+  <main class="safe-bottom flex flex-col gap-6 px-4 pb-8">
+    @if (profile(); as p) {
+      <div class="flex items-center gap-4 pt-2">
+        <img [src]="p.avatarUrl" alt="" class="h-20 w-20 shrink-0 rounded-full bg-white/10" />
+        <div class="min-w-0">
+          <p class="text-2xl font-bold leading-tight">{{ p.title }}</p>
+          @if (p.subscriberCount !== null) {
+            <p class="text-lg text-white/60">{{ compactCount(p.subscriberCount) }} người đăng ký</p>
+          }
+        </div>
+      </div>
+    }
+
+    @if (isBlocked()) {
+      <p class="rounded-xl bg-white/10 px-4 py-3">Kênh này đang bị chặn trong cài đặt.</p>
+    } @else {
+      <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @for (video of videos(); track video.id) {
+          <li><app-video-card [video]="video" [watched]="watchedIds().has(video.id)" [showChannel]="false" (chosen)="choose(video)" /></li>
+        } @empty {
+          @if (!loading() && !failed()) {
+            <li class="col-span-full py-10 text-center text-white/60">Chưa có video phù hợp.</li>
+          }
+        }
+      </ul>
+
+      @if (loading()) {
+        <p class="text-center text-white/60">Đang tải video…</p>
+      } @else if (failed()) {
+        <div class="flex flex-col items-center gap-3">
+          <p class="text-white/60">Không tải được video của kênh.</p>
+          <button type="button" class="btn-ghost" (click)="retry()">Thử lại</button>
+        </div>
+      } @else if (nextPageToken()) {
+        <button type="button" class="btn-ghost self-center" (click)="loadMore()">Xem thêm video</button>
+      }
+    }
+  </main>
+</div>

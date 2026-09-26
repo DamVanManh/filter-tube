@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { FilterThresholds, Topic } from '../core/models';
+import { FilterThresholds, QuietHours, Topic } from '../core/models';
+import { addTopic as withTopicAdded, editTopic as withTopicEdited } from '../core/topics';
+import { AuthStore, SIGN_IN_OUTCOME } from '../core/auth.store';
 import { SettingsStore } from '../core/settings.store';
 import { YoutubeApi } from '../core/youtube-api';
 
@@ -26,18 +28,6 @@ const THRESHOLD_FIELDS: readonly ThresholdField[] = [
   { key: 'maxUppercaseRatio', label: 'Tỉ lệ chữ IN HOA tối đa trong tiêu đề (0–1)', step: 0.1 },
 ];
 
-function slug(text: string): string {
-  return (
-    text
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/đ/gi, 'd')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'chu-de'
-  );
-}
-
 @Component({
   selector: 'app-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +36,7 @@ function slug(text: string): string {
 })
 export class SettingsComponent {
   protected readonly store = inject(SettingsStore);
+  protected readonly auth = inject(AuthStore);
   private readonly api = inject(YoutubeApi);
 
   readonly closed = output<void>();
@@ -61,6 +52,10 @@ export class SettingsComponent {
   protected topicLabel = '';
   protected topicQuery = '';
   protected keywordInput = '';
+  protected blockInput = '';
+  protected readonly editingTopicId = signal<string | null>(null);
+  protected editLabel = '';
+  protected editQuery = '';
   protected importText = '';
 
   protected async submitPin(): Promise<void> {
@@ -107,24 +102,54 @@ export class SettingsComponent {
     await this.store.update((s) => ({ ...s, trustedChannels: s.trustedChannels.filter((c) => c.id !== id) }));
   }
 
+  protected async blockChannelByReference(): Promise<void> {
+    const input = this.blockInput.trim();
+    if (!input) return;
+    this.busy.set(true);
+    try {
+      const channel = await this.api.resolveChannel(input);
+      if (!channel) {
+        this.message.set('Không tìm thấy kênh. Dán link kênh hoặc @tên_kênh.');
+        return;
+      }
+      await this.store.blockChannel(channel.id, channel.title);
+      this.blockInput = '';
+      this.message.set(`Đã chặn kênh ${channel.title}.`);
+    } catch {
+      this.message.set('Không kết nối được YouTube. Thử lại sau.');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   protected async unblockChannel(id: string): Promise<void> {
     await this.store.update((s) => ({ ...s, blockedChannels: s.blockedChannels.filter((c) => c.id !== id) }));
   }
 
   protected async addTopic(): Promise<void> {
-    const label = this.topicLabel.trim();
-    const query = this.topicQuery.trim() || label;
-    if (!label) return;
-    await this.store.update((s) => {
-      const base = slug(label);
-      const taken = new Set(s.topics.map((t) => t.id));
-      let id = base;
-      for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
-      const topic: Topic = { id, label, query };
-      return { ...s, topics: [...s.topics, topic] };
-    });
+    await this.store.update((s) => withTopicAdded(s, { label: this.topicLabel, query: this.topicQuery }));
     this.topicLabel = '';
     this.topicQuery = '';
+  }
+
+  protected startEditTopic(topic: Topic): void {
+    this.editingTopicId.set(topic.id);
+    this.editLabel = topic.label;
+    this.editQuery = topic.query;
+  }
+
+  protected cancelEditTopic(): void {
+    this.editingTopicId.set(null);
+  }
+
+  protected async saveTopic(id: string): Promise<void> {
+    if (!this.editLabel.trim()) {
+      this.message.set('Tên tab không được để trống.');
+      return;
+    }
+    await this.store.update((s) => withTopicEdited(s, id, { label: this.editLabel, query: this.editQuery }));
+    this.editingTopicId.set(null);
+    this.message.set('Đã lưu chủ đề. Video mới sẽ tải khi đóng cài đặt.');
   }
 
   protected async removeTopic(id: string): Promise<void> {
@@ -159,6 +184,24 @@ export class SettingsComponent {
   protected async importSettings(): Promise<void> {
     const ok = await this.store.replaceFromJson(this.importText);
     this.message.set(ok ? 'Đã nạp cài đặt.' : 'Nội dung sao lưu không hợp lệ.');
+  }
+
+  protected async setQuietHours(change: Partial<QuietHours>): Promise<void> {
+    await this.store.update((s) => ({ ...s, quietHours: { ...s.quietHours, ...change } }));
+  }
+
+  protected async setQuietTime(which: 'start' | 'end', raw: string): Promise<void> {
+    if (/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)) await this.setQuietHours({ [which]: raw });
+  }
+
+  protected async signIn(): Promise<void> {
+    const outcome = await this.auth.signIn();
+    this.message.set(outcome === SIGN_IN_OUTCOME.SIGNED_IN ? 'Đã đăng nhập.' : 'Chưa đăng nhập được.');
+  }
+
+  protected async signOut(): Promise<void> {
+    await this.auth.signOut();
+    this.message.set('Đã đăng xuất.');
   }
 
   protected async changePin(): Promise<void> {

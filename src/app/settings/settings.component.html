@@ -20,6 +20,42 @@
       </form>
     } @else {
       <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Tài khoản Google</h2>
+        <p class="text-base text-white/60">Chỉ dùng để đọc và viết bình luận. Video xem trong app không ghi vào lịch sử YouTube.</p>
+        @if (auth.account(); as account) {
+          <div class="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-4 py-2">
+            <span class="flex min-w-0 items-center gap-3">
+              <img [src]="account.avatarUrl" alt="" class="h-10 w-10 shrink-0 rounded-full bg-white/10" />
+              <span class="truncate">{{ account.channelTitle }}</span>
+            </span>
+            <button type="button" class="btn-ghost shrink-0" (click)="signOut()">Đăng xuất</button>
+          </div>
+        } @else {
+          <button type="button" class="btn-ghost self-start" (click)="signIn()">Đăng nhập Google</button>
+        }
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Giờ nghỉ</h2>
+        <p class="text-base text-white/60">Trong giờ nghỉ app tự dừng video và khóa lại, báo trước 5 phút.</p>
+        <label class="flex items-center gap-3 text-lg">
+          <input type="checkbox" class="h-6 w-6 accent-brand" [checked]="store.settings().quietHours.enabled"
+                 (change)="setQuietHours({ enabled: $any($event.target).checked })" />
+          Bật giờ nghỉ
+        </label>
+        <div class="flex flex-wrap items-center gap-3 text-lg">
+          <label class="flex items-center gap-2 whitespace-nowrap">Khóa lúc
+            <input type="time" class="field w-36" [value]="store.settings().quietHours.start"
+                   (change)="setQuietTime('start', $any($event.target).value)" />
+          </label>
+          <label class="flex items-center gap-2 whitespace-nowrap">Mở lúc
+            <input type="time" class="field w-36" [value]="store.settings().quietHours.end"
+                   (change)="setQuietTime('end', $any($event.target).value)" />
+          </label>
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-3">
         <h2 class="text-xl font-semibold">Kênh tin cậy</h2>
         <p class="text-base text-white/60">Video mới của các kênh này luôn hiện, không cần qua ngưỡng kênh lạ.</p>
         <form class="flex gap-2" (ngSubmit)="addChannel()">
@@ -48,10 +84,24 @@
         </form>
         <ul class="flex flex-col gap-2">
           @for (t of store.settings().topics; track t.id) {
-            <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">
-              <span class="min-w-0"><b>{{ t.label }}</b> <span class="text-white/50">— {{ t.query }}</span></span>
-              <button type="button" class="btn-ghost shrink-0" (click)="removeTopic(t.id)">Xóa</button>
-            </li>
+            @if (editingTopicId() === t.id) {
+              <li class="flex flex-col gap-2 rounded-xl bg-white/10 p-3">
+                <input [name]="'editLabel-' + t.id" class="field" placeholder="Tên tab" [(ngModel)]="editLabel" />
+                <input [name]="'editQuery-' + t.id" class="field" placeholder="Từ khóa tìm" [(ngModel)]="editQuery" />
+                <div class="flex gap-2">
+                  <button type="button" class="btn-primary flex-1" (click)="saveTopic(t.id)">Lưu</button>
+                  <button type="button" class="btn-ghost flex-1" (click)="cancelEditTopic()">Hủy</button>
+                </div>
+              </li>
+            } @else {
+              <li class="flex flex-col gap-2 rounded-xl bg-white/5 px-4 py-3">
+                <span><b>{{ t.label }}</b> <span class="text-white/50">— {{ t.query }}</span></span>
+                <span class="flex gap-2">
+                  <button type="button" class="btn-ghost flex-1" (click)="startEditTopic(t)">Sửa</button>
+                  <button type="button" class="btn-ghost flex-1" (click)="removeTopic(t.id)">Xóa</button>
+                </span>
+              </li>
+            }
           }
         </ul>
       </section>
@@ -72,6 +122,11 @@
 
       <section class="flex flex-col gap-3">
         <h2 class="text-xl font-semibold">Kênh đã chặn</h2>
+        <p class="text-base text-white/60">Mọi video của kênh bị chặn sẽ bị ẩn, kể cả khi xuất hiện trong chủ đề.</p>
+        <form class="flex gap-2" (ngSubmit)="blockChannelByReference()">
+          <input name="block" class="field" placeholder="Link kênh hoặc @tên_kênh" [(ngModel)]="blockInput" />
+          <button type="submit" class="btn-primary shrink-0" [disabled]="busy()">Chặn</button>
+        </form>
         <ul class="flex flex-col gap-2">
           @for (c of store.settings().blockedChannels; track c.id) {
             <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">

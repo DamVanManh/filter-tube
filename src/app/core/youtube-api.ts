@@ -1,7 +1,17 @@
 import { Injectable } from '@angular/core';
 import { CapacitorHttp } from '@capacitor/core';
 import { environment } from '../../environments/environment';
-import { ChannelStats, TrustedChannel, Video, VideoOrigin } from './models';
+import {
+  ChannelProfile,
+  ChannelStats,
+  CommentItem,
+  CommentThread,
+  Page,
+  SignedInAccount,
+  TrustedChannel,
+  Video,
+  VideoOrigin,
+} from './models';
 import { parseChannelReference } from './channel-reference';
 import { parseIsoDurationSeconds } from './text';
 
@@ -43,14 +53,44 @@ interface ApiVideo {
 
 interface ApiChannel {
   readonly id: string;
-  readonly snippet: { readonly title: string; readonly publishedAt: string };
+  readonly snippet: { readonly title: string; readonly publishedAt: string; readonly thumbnails?: ApiThumbnails };
   readonly contentDetails?: { readonly relatedPlaylists: { readonly uploads: string } };
   readonly statistics?: { readonly subscriberCount?: string; readonly hiddenSubscriberCount?: boolean };
 }
 
 interface ListResponse<T> {
   readonly items?: readonly T[];
+  readonly nextPageToken?: string;
 }
+
+interface ApiCommentSnippet {
+  readonly authorDisplayName: string;
+  readonly authorProfileImageUrl?: string;
+  readonly textOriginal?: string;
+  readonly textDisplay?: string;
+  readonly likeCount?: number;
+  readonly publishedAt: string;
+}
+
+interface ApiComment {
+  readonly id: string;
+  readonly snippet: ApiCommentSnippet;
+}
+
+interface ApiCommentThread {
+  readonly id: string;
+  readonly snippet: { readonly topLevelComment: ApiComment; readonly totalReplyCount?: number };
+}
+
+const QUOTA_REASONS: ReadonlySet<string> = new Set(['quotaExceeded', 'dailyLimitExceeded', 'rateLimitExceeded']);
+
+export function isQuotaError(error: unknown): boolean {
+  return error instanceof YoutubeApiError && QUOTA_REASONS.has(error.reason);
+}
+
+export const COMMENTS_PAGE_SIZE = 20;
+export const CHANNEL_PAGE_SIZE = 30;
+export const COMMENTS_DISABLED_REASON = 'commentsDisabled';
 
 export interface VideoSource {
   readonly origin: VideoOrigin;
@@ -63,8 +103,39 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
   return out;
 }
 
-function bestThumbnail(t: ApiThumbnails): string {
-  return t.high?.url ?? t.medium?.url ?? t.default?.url ?? '';
+function bestThumbnail(t: ApiThumbnails | undefined): string {
+  return t?.high?.url ?? t?.medium?.url ?? t?.default?.url ?? '';
+}
+
+function toComment(c: ApiComment): CommentItem {
+  return {
+    id: c.id,
+    authorName: c.snippet.authorDisplayName,
+    authorAvatarUrl: c.snippet.authorProfileImageUrl ?? '',
+    text: c.snippet.textOriginal ?? c.snippet.textDisplay ?? '',
+    likeCount: c.snippet.likeCount ?? 0,
+    publishedAt: c.snippet.publishedAt,
+  };
+}
+
+function subscriberCountOf(c: ApiChannel): number | null {
+  return c.statistics?.hiddenSubscriberCount || c.statistics?.subscriberCount === undefined
+    ? null
+    : Number(c.statistics.subscriberCount);
+}
+
+function parseBody(data: unknown): unknown {
+  if (typeof data !== 'string') return data;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}
+
+function toApiError(status: number, data: unknown): YoutubeApiError {
+  const error = (parseBody(data) as { error?: { errors?: { reason?: string }[]; message?: string } } | null)?.error;
+  return new YoutubeApiError(status, error?.errors?.[0]?.reason ?? error?.message ?? 'unknown');
 }
 
 @Injectable({ providedIn: 'root' })
@@ -83,16 +154,83 @@ export class YoutubeApi {
   }
 
   async latestUploadIds(uploadsPlaylistId: string, max: number): Promise<string[]> {
-    const res = await this.get<ListResponse<{ contentDetails: { videoId: string } }>>('playlistItems', {
-      part: 'contentDetails',
-      playlistId: uploadsPlaylistId,
-      maxResults: String(max),
-    });
-    return (res.items ?? []).map((i) => i.contentDetails.videoId);
+    return [...(await this.uploadIdsPage(uploadsPlaylistId, max, null)).items];
   }
 
-  async searchVideoIds(query: string, max: number, publishedAfter: Date): Promise<string[]> {
-    const res = await this.get<ListResponse<{ id: { videoId?: string } }>>('search', {
+  async uploadIdsPage(uploadsPlaylistId: string, max: number, pageToken: string | null): Promise<Page<string>> {
+    const params: Record<string, string> = { part: 'contentDetails', playlistId: uploadsPlaylistId, maxResults: String(max) };
+    if (pageToken) params['pageToken'] = pageToken;
+    const res = await this.get<ListResponse<{ contentDetails: { videoId: string } }>>('playlistItems', params);
+    return { items: (res.items ?? []).map((i) => i.contentDetails.videoId), nextPageToken: res.nextPageToken ?? null };
+  }
+
+  async channelProfile(channelId: string): Promise<ChannelProfile | null> {
+    const res = await this.get<ListResponse<ApiChannel>>('channels', { part: 'snippet,statistics,contentDetails', id: channelId });
+    const c = res.items?.[0];
+    const uploads = c?.contentDetails?.relatedPlaylists.uploads;
+    if (!c || !uploads) return null;
+    return {
+      id: c.id,
+      title: c.snippet.title,
+      avatarUrl: bestThumbnail(c.snippet.thumbnails),
+      subscriberCount: subscriberCountOf(c),
+      createdAt: c.snippet.publishedAt,
+      uploadsPlaylistId: uploads,
+    };
+  }
+
+  async commentThreads(videoId: string, pageToken: string | null): Promise<Page<CommentThread>> {
+    const params: Record<string, string> = {
+      part: 'snippet',
+      videoId,
+      order: 'relevance',
+      textFormat: 'plainText',
+      maxResults: String(COMMENTS_PAGE_SIZE),
+    };
+    if (pageToken) params['pageToken'] = pageToken;
+    const res = await this.get<ListResponse<ApiCommentThread>>('commentThreads', params);
+    return {
+      items: (res.items ?? []).map((t) => ({
+        id: t.id,
+        top: toComment(t.snippet.topLevelComment),
+        replyCount: t.snippet.totalReplyCount ?? 0,
+      })),
+      nextPageToken: res.nextPageToken ?? null,
+    };
+  }
+
+  async replies(parentId: string): Promise<CommentItem[]> {
+    const res = await this.get<ListResponse<ApiComment>>('comments', {
+      part: 'snippet',
+      parentId,
+      textFormat: 'plainText',
+      maxResults: '100',
+    });
+    return (res.items ?? []).map(toComment).reverse();
+  }
+
+  async myChannel(accessToken: string): Promise<SignedInAccount | null> {
+    const res = await this.authed<ListResponse<ApiChannel>>('GET', 'channels', accessToken, { part: 'snippet', mine: 'true' });
+    const c = res.items?.[0];
+    return c ? { channelTitle: c.snippet.title, avatarUrl: bestThumbnail(c.snippet.thumbnails) } : null;
+  }
+
+  async postComment(accessToken: string, videoId: string, text: string): Promise<CommentThread> {
+    const created = await this.authed<ApiCommentThread>('POST', 'commentThreads', accessToken, { part: 'snippet' }, {
+      snippet: { videoId, topLevelComment: { snippet: { textOriginal: text } } },
+    });
+    return { id: created.id, top: toComment(created.snippet.topLevelComment), replyCount: 0 };
+  }
+
+  async postReply(accessToken: string, parentId: string, text: string): Promise<CommentItem> {
+    const created = await this.authed<ApiComment>('POST', 'comments', accessToken, { part: 'snippet' }, {
+      snippet: { parentId, textOriginal: text },
+    });
+    return toComment(created);
+  }
+
+  async searchVideoIds(query: string, max: number, publishedAfter: Date | null): Promise<string[]> {
+    const params: Record<string, string> = {
       part: 'id',
       q: query,
       type: 'video',
@@ -102,9 +240,10 @@ export class YoutubeApi {
       relevanceLanguage: YOUTUBE_LANGUAGE,
       videoEmbeddable: 'true',
       videoSyndicated: 'true',
-      publishedAfter: publishedAfter.toISOString(),
       order: 'relevance',
-    });
+    };
+    if (publishedAfter) params['publishedAfter'] = publishedAfter.toISOString();
+    const res = await this.get<ListResponse<{ id: { videoId?: string } }>>('search', params);
     return (res.items ?? []).flatMap((i) => (i.id.videoId ? [i.id.videoId] : []));
   }
 
@@ -144,10 +283,7 @@ export class YoutubeApi {
       .flatMap((p) => p.items ?? [])
       .map((c) => ({
         channelId: c.id,
-        subscriberCount:
-          c.statistics?.hiddenSubscriberCount || c.statistics?.subscriberCount === undefined
-            ? null
-            : Number(c.statistics.subscriberCount),
+        subscriberCount: subscriberCountOf(c),
         createdAt: c.snippet.publishedAt,
       }));
   }
@@ -161,10 +297,25 @@ export class YoutubeApi {
         'X-Android-Cert': environment.androidCertSha1,
       },
     });
-    if (res.status < 200 || res.status >= 300) {
-      const reason = (res.data as { error?: { errors?: { reason?: string }[]; message?: string } })?.error;
-      throw new YoutubeApiError(res.status, reason?.errors?.[0]?.reason ?? reason?.message ?? 'unknown');
-    }
-    return (typeof res.data === 'string' ? JSON.parse(res.data) : res.data) as T;
+    if (res.status < 200 || res.status >= 300) throw toApiError(res.status, res.data);
+    return parseBody(res.data) as T;
+  }
+
+  private async authed<T>(
+    method: 'GET' | 'POST',
+    endpoint: string,
+    accessToken: string,
+    params: Record<string, string>,
+    body?: unknown,
+  ): Promise<T> {
+    const res = await CapacitorHttp.request({
+      method,
+      url: `${API_BASE}/${endpoint}`,
+      params,
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      ...(body === undefined ? {} : { data: body }),
+    });
+    if (res.status < 200 || res.status >= 300) throw toApiError(res.status, res.data);
+    return parseBody(res.data) as T;
   }
 }

@@ -1,7 +1,7 @@
 import { Video } from './models';
 
-const ROTATION_PERIOD_MS = 6 * 3_600_000;
-const SEARCH_WINDOWS_DAYS: readonly number[] = [365, 60];
+export const ROTATION_PERIOD_MS = 4 * 3_600_000;
+const SEARCH_WINDOWS_DAYS: readonly number[] = [365, 30, 7];
 
 export function searchWindowDaysFor(nowMs: number): number {
   return SEARCH_WINDOWS_DAYS[Math.floor(nowMs / ROTATION_PERIOD_MS) % SEARCH_WINDOWS_DAYS.length] ?? 365;

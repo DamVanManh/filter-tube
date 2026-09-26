@@ -20,6 +20,40 @@ export interface Video {
   readonly topicId: string | null;
 }
 
+export interface ChannelProfile {
+  readonly id: string;
+  readonly title: string;
+  readonly avatarUrl: string;
+  readonly subscriberCount: number | null;
+  readonly createdAt: string;
+  readonly uploadsPlaylistId: string;
+}
+
+export interface Page<T> {
+  readonly items: readonly T[];
+  readonly nextPageToken: string | null;
+}
+
+export interface CommentItem {
+  readonly id: string;
+  readonly authorName: string;
+  readonly authorAvatarUrl: string;
+  readonly text: string;
+  readonly likeCount: number;
+  readonly publishedAt: string;
+}
+
+export interface CommentThread {
+  readonly id: string;
+  readonly top: CommentItem;
+  readonly replyCount: number;
+}
+
+export interface SignedInAccount {
+  readonly channelTitle: string;
+  readonly avatarUrl: string;
+}
+
 export interface ChannelStats {
   readonly channelId: string;
   readonly subscriberCount: number | null;
@@ -50,6 +84,12 @@ export interface FilterThresholds {
   readonly maxUppercaseRatio: number;
 }
 
+export interface QuietHours {
+  readonly enabled: boolean;
+  readonly start: string;
+  readonly end: string;
+}
+
 export interface LanguageRule {
   readonly requireVietnamese: boolean;
 }
@@ -62,6 +102,7 @@ export interface Settings {
   readonly thresholds: FilterThresholds;
   readonly language: LanguageRule;
   readonly blockedCategoryIds: readonly string[];
+  readonly quietHours: QuietHours;
 }
 
 export const REJECT_REASON = {

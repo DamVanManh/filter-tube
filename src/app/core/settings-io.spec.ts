@@ -16,4 +16,11 @@ describe('parseSettings', () => {
     const parsed = parseSettings({ ...DEFAULT_SETTINGS, thresholds: { minDurationMinutes: 10 } });
     expect(parsed?.thresholds).toEqual({ ...DEFAULT_SETTINGS.thresholds, minDurationMinutes: 10 });
   });
+
+  it('keeps a valid quiet-hours schedule and rejects malformed times', () => {
+    const custom = parseSettings({ ...DEFAULT_SETTINGS, quietHours: { enabled: false, start: '22:30', end: '05:45' } });
+    expect(custom?.quietHours).toEqual({ enabled: false, start: '22:30', end: '05:45' });
+    const broken = parseSettings({ ...DEFAULT_SETTINGS, quietHours: { enabled: true, start: '25:00', end: 'x' } });
+    expect(broken?.quietHours).toEqual(DEFAULT_SETTINGS.quietHours);
+  });
 });

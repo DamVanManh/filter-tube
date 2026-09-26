@@ -11,34 +11,31 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { ChannelRef } from '../channel/channel-page.component';
+import { CommentsComponent } from '../comments/comments.component';
 import { Video } from '../core/models';
+import { relativeTimeVi } from '../core/relative-time';
+import { enterDeviceFullscreen, exitDeviceFullscreen } from '../native/player-chrome';
+import { formatDuration } from '../video-card/video-card.component';
 import { PLAYER_STATE, YtPlayer, createPlayer, loadYoutubeIframeApi } from './youtube-iframe';
 
 export const AUTO_NEXT_SECONDS = 8;
 const SKIP_SECONDS = 10;
 const PROGRESS_POLL_MS = 500;
+const FULLSCREEN_CONTROLS_VISIBLE_MS = 6000;
 
 const OVERLAY = {
   NONE: 'none',
   PAUSED: 'paused',
   ENDED: 'ended',
   LOAD_ERROR: 'load-error',
-  CONFIRM_BLOCK: 'confirm-block',
 } as const;
 type Overlay = (typeof OVERLAY)[keyof typeof OVERLAY];
-
-function clockText(totalSeconds: number): string {
-  const whole = Math.max(0, Math.floor(totalSeconds));
-  const h = Math.floor(whole / 3600);
-  const m = Math.floor((whole % 3600) / 60);
-  const s = whole % 60;
-  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
-  return `${h > 0 ? `${h}:` : ''}${mm}:${String(s).padStart(2, '0')}`;
-}
 
 @Component({
   selector: 'app-player',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommentsComponent],
   templateUrl: './player.component.html',
 })
 export class PlayerComponent {
@@ -48,27 +45,33 @@ export class PlayerComponent {
   readonly closed = output<void>();
   readonly watched = output<Video>();
   readonly playNext = output<Video>();
-  readonly blockChannel = output<Video>();
+  readonly openChannel = output<ChannelRef>();
 
   protected readonly OVERLAY = OVERLAY;
   protected readonly SKIP_SECONDS = SKIP_SECONDS;
-  protected readonly clockText = clockText;
+  protected readonly clockText = formatDuration;
+  protected readonly relativeTime = (iso: string) => relativeTimeVi(iso, new Date());
   protected readonly overlay = signal<Overlay>(OVERLAY.NONE);
   protected readonly countdown = signal(AUTO_NEXT_SECONDS);
   protected readonly isPlaying = signal(false);
   protected readonly currentTime = signal(0);
   protected readonly duration = signal(0);
+  readonly isFullscreen = signal(false);
+  protected readonly fullscreenControlsVisible = signal(true);
 
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('playerHost');
   private player: YtPlayer | null = null;
   private started = false;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private progressTimer: ReturnType<typeof setInterval> | null = null;
+  private controlsTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.stopCountdown();
       this.stopProgress();
+      this.clearControlsTimer();
+      if (this.isFullscreen()) void exitDeviceFullscreen();
       this.player?.destroy();
     });
 
@@ -78,9 +81,35 @@ export class PlayerComponent {
     });
   }
 
+  async enterFullscreen(): Promise<void> {
+    this.isFullscreen.set(true);
+    this.revealFullscreenControls();
+    await enterDeviceFullscreen();
+  }
+
+  async exitFullscreen(): Promise<void> {
+    this.isFullscreen.set(false);
+    this.clearControlsTimer();
+    await exitDeviceFullscreen();
+  }
+
+  protected onVideoTap(): void {
+    if (!this.isFullscreen()) {
+      this.togglePlay();
+      return;
+    }
+    if (this.fullscreenControlsVisible()) {
+      this.fullscreenControlsVisible.set(false);
+      this.clearControlsTimer();
+    } else {
+      this.revealFullscreenControls();
+    }
+  }
+
   protected togglePlay(): void {
     if (this.isPlaying()) this.player?.pauseVideo();
     else this.resume();
+    if (this.isFullscreen()) this.revealFullscreenControls();
   }
 
   protected resume(): void {
@@ -93,6 +122,7 @@ export class PlayerComponent {
     const target = Math.min(Math.max(0, this.player.getCurrentTime() + deltaSeconds), this.duration());
     this.player.seekTo(target, true);
     this.currentTime.set(target);
+    if (this.isFullscreen()) this.revealFullscreenControls();
   }
 
   protected seekTo(raw: string): void {
@@ -100,31 +130,37 @@ export class PlayerComponent {
     if (!this.player || !Number.isFinite(target)) return;
     this.player.seekTo(target, true);
     this.currentTime.set(target);
+    if (this.isFullscreen()) this.revealFullscreenControls();
   }
 
   protected goNext(): void {
     const next = this.nextVideo();
     this.stopCountdown();
     if (next) this.playNext.emit(next);
-    else this.closed.emit();
+    else this.close();
   }
 
-  protected askBlock(): void {
-    this.stopCountdown();
+  protected showChannel(): void {
+    const video = this.video();
     this.player?.pauseVideo();
-    this.overlay.set(OVERLAY.CONFIRM_BLOCK);
-  }
-
-  protected confirmBlock(): void {
-    this.blockChannel.emit(this.video());
-  }
-
-  protected cancelBlock(): void {
-    this.overlay.set(OVERLAY.PAUSED);
+    this.openChannel.emit({ id: video.channelId, title: video.channelTitle });
   }
 
   protected close(): void {
     this.closed.emit();
+  }
+
+  private revealFullscreenControls(): void {
+    this.fullscreenControlsVisible.set(true);
+    this.clearControlsTimer();
+    this.controlsTimer = setTimeout(() => {
+      if (this.isPlaying()) this.fullscreenControlsVisible.set(false);
+    }, FULLSCREEN_CONTROLS_VISIBLE_MS);
+  }
+
+  private clearControlsTimer(): void {
+    if (this.controlsTimer !== null) clearTimeout(this.controlsTimer);
+    this.controlsTimer = null;
   }
 
   private async open(video: Video): Promise<void> {
@@ -157,7 +193,7 @@ export class PlayerComponent {
       }
       const reported = this.player?.getDuration() ?? 0;
       if (reported > 0) this.duration.set(reported);
-      if (this.overlay() !== OVERLAY.CONFIRM_BLOCK) this.overlay.set(OVERLAY.NONE);
+      this.overlay.set(OVERLAY.NONE);
       this.startProgress();
     } else {
       this.stopProgress();

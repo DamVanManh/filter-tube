@@ -1,0 +1,96 @@
+<section class="flex flex-col gap-4">
+  <h2 class="text-xl font-bold">Bình luận</h2>
+
+  @if (notice(); as text) {
+    <p class="rounded-xl bg-amber-500/15 px-4 py-3 text-base text-amber-200">{{ text }}</p>
+  }
+
+  @if (state() !== LOAD_STATE.DISABLED) {
+    @if (auth.account(); as account) {
+      <form class="flex flex-col gap-2" (ngSubmit)="postComment()">
+        <div class="flex items-center gap-3">
+          <img [src]="account.avatarUrl" alt="" class="h-10 w-10 shrink-0 rounded-full bg-white/10" />
+          <span class="text-base text-white/70">Bình luận với tên <b class="text-white">{{ account.channelTitle }}</b></span>
+        </div>
+        <textarea name="draft" rows="3" class="field text-lg" placeholder="Viết bình luận…"
+                  [maxlength]="MAX_COMMENT_LENGTH" [(ngModel)]="draft"></textarea>
+        <button type="submit" class="btn-primary self-end" [disabled]="posting() || !draft.trim()">
+          {{ posting() ? 'Đang gửi…' : 'Gửi bình luận' }}
+        </button>
+      </form>
+    } @else {
+      <button type="button" class="btn-ghost self-start" (click)="signIn()">
+        Đăng nhập Google để bình luận
+      </button>
+    }
+  }
+
+  @switch (state()) {
+    @case (LOAD_STATE.DISABLED) {
+      <p class="text-white/60">Video này đã tắt bình luận.</p>
+    }
+    @case (LOAD_STATE.FAILED) {
+      <p class="text-white/60">Không tải được bình luận.</p>
+      <button type="button" class="btn-ghost self-start" (click)="loadMore()">Thử lại</button>
+    }
+  }
+
+  <ul class="flex flex-col gap-5">
+    @for (thread of threads(); track thread.id) {
+      <li class="flex gap-3">
+        <img [src]="thread.top.authorAvatarUrl" alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-full bg-white/10" />
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+          <p class="text-base text-white/60">
+            <b class="text-white/90">{{ thread.top.authorName }}</b> · {{ relativeTime(thread.top.publishedAt) }}
+          </p>
+          <p class="whitespace-pre-line break-words text-lg leading-snug">{{ thread.top.text }}</p>
+          <div class="flex flex-wrap items-center gap-4 text-base text-white/60">
+            @if (thread.top.likeCount > 0) {
+              <span>👍 {{ compactCount(thread.top.likeCount) }}</span>
+            }
+            @if (auth.isSignedIn()) {
+              <button type="button" class="py-2 font-semibold text-white/80" (click)="startReply(thread.id)">Trả lời</button>
+            }
+            @if (thread.replyCount > 0) {
+              <button type="button" class="py-2 font-semibold text-sky-300" (click)="toggleReplies(thread)">
+                {{ replies()[thread.id] ? 'Ẩn trả lời' : thread.replyCount + ' trả lời' }}
+              </button>
+            }
+          </div>
+
+          @if (replyingTo() === thread.id) {
+            <form class="flex flex-col gap-2" (ngSubmit)="postReply(thread)">
+              <textarea [name]="'reply-' + thread.id" rows="2" class="field text-lg" placeholder="Viết trả lời…"
+                        [maxlength]="MAX_COMMENT_LENGTH" [(ngModel)]="replyDraft"></textarea>
+              <button type="submit" class="btn-primary self-end" [disabled]="posting() || !replyDraft.trim()">
+                {{ posting() ? 'Đang gửi…' : 'Gửi trả lời' }}
+              </button>
+            </form>
+          }
+
+          @if (replies()[thread.id]; as items) {
+            <ul class="mt-2 flex flex-col gap-4 border-l-2 border-white/10 pl-3">
+              @for (reply of items; track reply.id) {
+                <li class="flex gap-3">
+                  <img [src]="reply.authorAvatarUrl" alt="" loading="lazy" class="h-8 w-8 shrink-0 rounded-full bg-white/10" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-base text-white/60"><b class="text-white/90">{{ reply.authorName }}</b> · {{ relativeTime(reply.publishedAt) }}</p>
+                    <p class="whitespace-pre-line break-words text-lg leading-snug">{{ reply.text }}</p>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+
+  @if (state() === LOAD_STATE.LOADING) {
+    <p class="text-center text-white/60">Đang tải bình luận…</p>
+  } @else if (nextPageToken()) {
+    <button type="button" class="btn-ghost self-center" (click)="loadMore()">Xem thêm bình luận</button>
+  } @else if (state() === LOAD_STATE.IDLE && threads().length === 0) {
+    <p class="text-white/60">Chưa có bình luận nào.</p>
+  }
+</section>

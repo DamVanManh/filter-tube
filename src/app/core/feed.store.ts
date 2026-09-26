@@ -3,13 +3,13 @@ import { ChannelStats, Video, VIDEO_ORIGIN } from './models';
 import { SettingsStore } from './settings.store';
 import { readJson, writeJson } from './storage';
 import { mergeTopicVideos, searchWindowDaysFor } from './topic-rotation';
-import { YoutubeApi, YoutubeApiError } from './youtube-api';
+import { YoutubeApi, YoutubeApiError, isQuotaError } from './youtube-api';
 
 const CACHE_KEY = 'feed-cache';
 const HOUR_MS = 3_600_000;
 export const FEED_POLICY = {
   channelTtlMs: HOUR_MS,
-  topicTtlMs: 6 * HOUR_MS,
+  topicTtlMs: 4 * HOUR_MS,
   topicMinRefreshMs: HOUR_MS,
   statsTtlMs: 7 * 24 * HOUR_MS,
   uploadsPerChannel: 15,
@@ -20,6 +20,7 @@ export const FEED_POLICY = {
 interface CachedSource {
   readonly fetchedAt: number;
   readonly videos: readonly Video[];
+  readonly query?: string;
 }
 
 interface CachedStats extends ChannelStats {
@@ -47,11 +48,13 @@ function topicKey(id: string): string {
   return `topic:${id}`;
 }
 
-const QUOTA_REASONS: ReadonlySet<string> = new Set(['quotaExceeded', 'dailyLimitExceeded', 'rateLimitExceeded']);
+function cachedForQuery(source: CachedSource | undefined, query: string): boolean {
+  return source !== undefined && source.query === query;
+}
 
 function classifyError(error: unknown): FeedError {
   if (!(error instanceof YoutubeApiError)) return FEED_ERROR.NETWORK;
-  if (QUOTA_REASONS.has(error.reason)) return FEED_ERROR.QUOTA;
+  if (isQuotaError(error)) return FEED_ERROR.QUOTA;
   return error.status >= 400 && error.status < 500 ? FEED_ERROR.CONFIG : FEED_ERROR.NETWORK;
 }
 
@@ -66,13 +69,13 @@ export class FeedStore {
 
   readonly allVideos = computed<Video[]>(() => {
     const settings = this.settingsStore.settings();
-    const active = new Set([
-      ...settings.trustedChannels.map((c) => channelKey(c.id)),
-      ...settings.topics.map((t) => topicKey(t.id)),
-    ]);
-    return Object.entries(this.cache().sources)
-      .filter(([key]) => active.has(key))
-      .flatMap(([, source]) => source.videos);
+    const sources = this.cache().sources;
+    const fromChannels = settings.trustedChannels.flatMap((c) => sources[channelKey(c.id)]?.videos ?? []);
+    const fromTopics = settings.topics.flatMap((t) => {
+      const source = sources[topicKey(t.id)];
+      return cachedForQuery(source, t.query) ? (source?.videos ?? []) : [];
+    });
+    return [...fromChannels, ...fromTopics];
   });
 
   readonly stats = computed<ReadonlyMap<string, ChannelStats>>(
@@ -101,15 +104,22 @@ export class FeedStore {
           sources[channelKey(c.id)] = { fetchedAt: now, videos };
         }),
       ...settings.topics
-        .filter((t) =>
-          this.isStale(sources[topicKey(t.id)], userRequested ? FEED_POLICY.topicMinRefreshMs : FEED_POLICY.topicTtlMs, now),
+        .filter(
+          (t) =>
+            !cachedForQuery(sources[topicKey(t.id)], t.query) ||
+            this.isStale(sources[topicKey(t.id)], userRequested ? FEED_POLICY.topicMinRefreshMs : FEED_POLICY.topicTtlMs, now),
         )
         .map((t) => async () => {
           const since = new Date(now - searchWindowDaysFor(now) * 24 * HOUR_MS);
           const ids = await this.api.searchVideoIds(t.query, FEED_POLICY.searchResultsPerTopic, since);
           const fresh = await this.api.videoDetails(ids, { origin: VIDEO_ORIGIN.TOPIC, topicId: t.id });
-          const previous = sources[topicKey(t.id)]?.videos ?? [];
-          sources[topicKey(t.id)] = { fetchedAt: now, videos: mergeTopicVideos(fresh, previous, FEED_POLICY.maxVideosPerTopic) };
+          const cached = sources[topicKey(t.id)];
+          const previous = cachedForQuery(cached, t.query) ? (cached?.videos ?? []) : [];
+          sources[topicKey(t.id)] = {
+            fetchedAt: now,
+            query: t.query,
+            videos: mergeTopicVideos(fresh, previous, FEED_POLICY.maxVideosPerTopic),
+          };
         }),
     ];
 

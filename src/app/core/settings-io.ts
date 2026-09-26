@@ -12,6 +12,21 @@ function isObjectArrayWith(value: unknown, keys: readonly string[]): boolean {
   );
 }
 
+const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function parseQuietHours(raw: unknown): Settings['quietHours'] {
+  const fallback = DEFAULT_SETTINGS.quietHours;
+  if (typeof raw !== 'object' || raw === null) return fallback;
+  const r = raw as Record<string, unknown>;
+  const time = (value: unknown, otherwise: string): string =>
+    typeof value === 'string' && CLOCK_TIME.test(value) ? value : otherwise;
+  return {
+    enabled: typeof r['enabled'] === 'boolean' ? r['enabled'] : fallback.enabled,
+    start: time(r['start'], fallback.start),
+    end: time(r['end'], fallback.end),
+  };
+}
+
 export function parseSettings(raw: unknown): Settings | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
@@ -36,6 +51,7 @@ export function parseSettings(raw: unknown): Settings | null {
       maxUppercaseRatio: num('maxUppercaseRatio'),
     },
     blockedCategoryIds,
+    quietHours: parseQuietHours(r['quietHours']),
     language: {
       requireVietnamese:
         typeof language['requireVietnamese'] === 'boolean'

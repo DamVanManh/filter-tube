@@ -27,3 +27,7 @@ export function parseIsoDurationSeconds(iso: string): number {
   const [, d, h, m, s] = match;
   return Number(d ?? 0) * 86400 + Number(h ?? 0) * 3600 + Number(m ?? 0) * 60 + Number(s ?? 0);
 }
+
+export function normalizeSearchQuery(raw: string): string {
+  return raw.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+}

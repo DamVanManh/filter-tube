@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS } from './defaults';
 import { ChannelStats, REJECT_REASON, Settings, Video, VIDEO_ORIGIN } from './models';
-import { parseIsoDurationSeconds, uppercaseRatio } from './text';
+import { normalizeSearchQuery, parseIsoDurationSeconds, uppercaseRatio } from './text';
 import { containsBannedKeyword, keepAcceptable, rejectReason } from './video-filter';
 
 const NOW = new Date('2026-09-25T00:00:00Z');
@@ -162,5 +162,13 @@ describe('text helpers', () => {
   it('ignores very short titles when measuring capitals', () => {
     expect(uppercaseRatio('OK VN')).toBe(0);
     expect(uppercaseRatio('ABCDEFGHij')).toBeCloseTo(0.8);
+  });
+});
+
+describe('normalizeSearchQuery', () => {
+  it('treats spacing, case and Unicode composition as the same query', () => {
+    expect(normalizeSearchQuery('  Cải   Lương ')).toBe('cải lương');
+    expect(normalizeSearchQuery('Ca\u0309i lu\u031bo\u031bng')).toBe(normalizeSearchQuery('Cải lương'));
+    expect(normalizeSearchQuery('   ')).toBe('');
   });
 });
