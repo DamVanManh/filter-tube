@@ -42,6 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   language: { requireVietnamese: true },
   quietHours: { enabled: true, start: '23:00', end: '06:00' },
+  display: { uiScale: 1, fullTitles: false },
   blockedCategoryIds: [
     YOUTUBE_CATEGORY.FILM_AND_ANIMATION,
     YOUTUBE_CATEGORY.GAMING,

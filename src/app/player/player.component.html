@@ -1,10 +1,4 @@
-<div class="fixed inset-0 z-40 flex flex-col bg-black">
-  @if (!isFullscreen()) {
-    <div class="safe-top flex items-center gap-3 bg-neutral-900 px-4 py-2">
-      <button type="button" class="btn-ghost shrink-0" (click)="close()">← Danh sách</button>
-    </div>
-  }
-
+<div class="fixed inset-0 z-40 flex flex-col bg-black" [class.safe-top]="!isFullscreen()">
   <div [class]="isFullscreen() ? 'absolute inset-0 flex items-center justify-center bg-black' : 'relative shrink-0'">
     <div class="relative aspect-video max-h-full max-w-full" [class]="isFullscreen() ? 'h-full' : 'w-full'">
       <div #playerHost class="absolute inset-0"></div>
@@ -12,18 +6,6 @@
     </div>
 
     @switch (overlay()) {
-      @case (OVERLAY.PAUSED) {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/90 p-4 text-center">
-          <button type="button" class="btn-primary px-10 text-2xl" (click)="resume()">▶ Xem tiếp</button>
-          <div class="flex flex-wrap justify-center gap-3">
-            @if (isFullscreen()) {
-              <button type="button" class="btn-ghost" (click)="exitFullscreen()">Thu nhỏ màn hình</button>
-            } @else {
-              <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
-            }
-          </div>
-        </div>
-      }
       @case (OVERLAY.ENDED) {
         <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-hidden bg-black p-4 text-center">
           @if (nextVideo(); as next) {
@@ -31,11 +13,11 @@
             <p class="line-clamp-2 max-w-md text-xl font-semibold">{{ next.title }}</p>
             <div class="flex flex-wrap justify-center gap-3">
               <button type="button" class="btn-primary" (click)="goNext()">▶ Xem ngay</button>
-              <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
+              <button type="button" class="btn-ghost" (click)="close()">← Quay lại</button>
             </div>
           } @else {
             <p class="text-xl">Đã xem hết video</p>
-            <button type="button" class="btn-primary" (click)="close()">← Về danh sách</button>
+            <button type="button" class="btn-primary" (click)="close()">← Quay lại</button>
           }
         </div>
       }
@@ -46,7 +28,7 @@
             @if (nextVideo()) {
               <button type="button" class="btn-primary" (click)="goNext()">Xem video khác</button>
             }
-            <button type="button" class="btn-ghost" (click)="close()">← Về danh sách</button>
+            <button type="button" class="btn-ghost" (click)="close()">← Quay lại</button>
           </div>
         </div>
       }
@@ -73,24 +55,40 @@
   </div>
 
   @if (!isFullscreen()) {
-    <div class="flex shrink-0 flex-col gap-3 bg-neutral-900 px-4 pb-4 pt-3">
-      <div class="flex items-center gap-3 text-base tabular-nums text-white/70">
-        <span>{{ clockText(currentTime()) }}</span>
-        <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
-               [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
-        <span>{{ clockText(duration()) }}</span>
+    <div class="shrink-0 bg-neutral-900 px-4">
+      <div class="flex flex-col gap-3 overflow-hidden transition-all duration-200"
+           [class]="controlsCollapsed() ? 'max-h-0' : 'max-h-[40rem] pt-3'" data-testid="player-controls">
+        <div class="flex items-center gap-3 text-base tabular-nums text-white/70">
+          <span>{{ clockText(currentTime()) }}</span>
+          <input type="range" class="h-2 flex-1 accent-brand" min="0" step="1" aria-label="Tua video"
+                 [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
+          <span>{{ clockText(duration()) }}</span>
+        </div>
+        <div class="flex items-center justify-center gap-4">
+          <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
+          <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
+            {{ isPlaying() ? '❚❚' : '▶' }}
+          </button>
+          <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+        </div>
+        <div class="flex gap-3">
+          <button type="button" class="btn-ghost flex-1 whitespace-nowrap px-3" (click)="close()">← Quay lại</button>
+          <button type="button" class="btn-ghost flex-[1.4] whitespace-nowrap px-3" (click)="enterFullscreen()">⛶ Toàn màn hình</button>
+        </div>
       </div>
-      <div class="flex items-center justify-center gap-4">
-        <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
-        <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
-          {{ isPlaying() ? '❚❚' : '▶' }}
-        </button>
-        <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+      <div class="flex gap-3 py-3" role="tablist">
+        <button type="button" role="tab" class="btn flex-1 whitespace-nowrap px-3"
+                [attr.aria-selected]="panel() === PLAYER_PANEL.COMMENTS"
+                [class]="panel() === PLAYER_PANEL.COMMENTS ? 'bg-white text-black' : 'bg-white/10 text-white'"
+                (click)="choosePanel(PLAYER_PANEL.COMMENTS)">💬 Bình luận</button>
+        <button type="button" role="tab" class="btn flex-1 whitespace-nowrap px-3"
+                [attr.aria-selected]="panel() === PLAYER_PANEL.OTHER_VIDEOS"
+                [class]="panel() === PLAYER_PANEL.OTHER_VIDEOS ? 'bg-white text-black' : 'bg-white/10 text-white'"
+                (click)="choosePanel(PLAYER_PANEL.OTHER_VIDEOS)">▶ Video khác</button>
       </div>
-      <button type="button" class="btn-ghost w-full py-4 text-xl" (click)="enterFullscreen()">⛶ Xem toàn màn hình</button>
     </div>
 
-    <div class="safe-bottom flex-1 overflow-y-auto px-4 pb-8 pt-4">
+    <div class="safe-bottom flex-1 overflow-y-auto px-4 pb-8 pt-4" data-testid="player-info" (scroll)="onInfoScroll($event)">
       <h1 class="text-xl font-bold leading-snug">{{ video().title }}</h1>
       <p class="mt-1 text-base text-white/60">{{ relativeTime(video().publishedAt) }}</p>
       <button type="button" class="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left active:opacity-70"
@@ -102,7 +100,18 @@
         <span class="shrink-0 text-lg font-semibold text-sky-300">Xem kênh ›</span>
       </button>
       <div class="mt-6">
-        <app-comments [videoId]="video().id" />
+        @if (panel() === PLAYER_PANEL.COMMENTS) {
+          <app-comments [videoId]="video().id" />
+        } @else {
+          <h2 class="mb-4 text-xl font-bold">Video khác</h2>
+          <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            @for (other of others(); track other.id) {
+              <li><app-video-card [video]="other" (chosen)="pickVideo.emit(other)" /></li>
+            } @empty {
+              <li class="text-white/60">Chưa có video khác.</li>
+            }
+          </ul>
+        }
       </div>
     </div>
   }

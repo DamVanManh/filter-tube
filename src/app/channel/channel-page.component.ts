@@ -1,16 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { ChannelProfile, Video, VIDEO_ORIGIN } from '../core/models';
+import { ChannelRef } from '../core/nav-stack';
 import { compactCountVi } from '../core/relative-time';
 import { SettingsStore } from '../core/settings.store';
 import { keepAcceptable } from '../core/video-filter';
 import { WatchedStore } from '../core/watched.store';
 import { CHANNEL_PAGE_SIZE, YoutubeApi } from '../core/youtube-api';
 import { VideoCardComponent } from '../video-card/video-card.component';
-
-export interface ChannelRef {
-  readonly id: string;
-  readonly title: string;
-}
 
 export interface PlayRequest {
   readonly video: Video;

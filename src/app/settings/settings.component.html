@@ -36,6 +36,26 @@
       </section>
 
       <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Hiển thị</h2>
+        <p class="text-base text-white/60">Cỡ chữ và cỡ nút trong toàn app, thay đổi ngay khi chọn.</p>
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Cỡ chữ">
+          @for (option of UI_SCALE_OPTIONS; track option.value) {
+            <button type="button" role="radio" class="btn px-4"
+                    [attr.aria-checked]="store.settings().display.uiScale === option.value"
+                    [class]="store.settings().display.uiScale === option.value ? 'bg-white text-black' : 'bg-white/10 text-white'"
+                    (click)="setDisplay({ uiScale: option.value })">
+              {{ option.label }}
+            </button>
+          }
+        </div>
+        <label class="flex items-center gap-3 text-lg">
+          <input type="checkbox" class="h-6 w-6 shrink-0 accent-brand" [checked]="store.settings().display.fullTitles"
+                 (change)="setDisplay({ fullTitles: $any($event.target).checked })" />
+          Hiện đầy đủ tiêu đề video (không cắt bớt bằng “…”)
+        </label>
+      </section>
+
+      <section class="flex flex-col gap-3">
         <h2 class="text-xl font-semibold">Giờ nghỉ</h2>
         <p class="text-base text-white/60">Trong giờ nghỉ app tự dừng video và khóa lại, báo trước 5 phút.</p>
         <label class="flex items-center gap-3 text-lg">

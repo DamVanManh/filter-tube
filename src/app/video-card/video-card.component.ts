@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Video } from '../core/models';
 import { relativeTimeVi } from '../core/relative-time';
+import { SettingsStore } from '../core/settings.store';
 
 export function formatDuration(totalSeconds: number): string {
   const whole = Math.max(0, Math.floor(totalSeconds));
@@ -22,6 +23,8 @@ export class VideoCardComponent {
   readonly showChannel = input(true);
   readonly chosen = output<void>();
 
+  private readonly settingsStore = inject(SettingsStore);
+  protected readonly fullTitles = computed(() => this.settingsStore.settings().display.fullTitles);
   protected readonly formatDuration = formatDuration;
   protected readonly relativeTime = (iso: string) => relativeTimeVi(iso, new Date());
 }

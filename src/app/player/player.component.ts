@@ -7,26 +7,38 @@ import {
   inject,
   input,
   output,
+  computed,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
-import { ChannelRef } from '../channel/channel-page.component';
+import { ChannelRef } from '../core/nav-stack';
 import { CommentsComponent } from '../comments/comments.component';
+import { shouldAutoFullscreen } from '../core/idle';
 import { Video } from '../core/models';
 import { relativeTimeVi } from '../core/relative-time';
 import { enterDeviceFullscreen, exitDeviceFullscreen } from '../native/player-chrome';
-import { formatDuration } from '../video-card/video-card.component';
+import { VideoCardComponent, formatDuration } from '../video-card/video-card.component';
 import { PLAYER_STATE, YtPlayer, createPlayer, loadYoutubeIframeApi } from './youtube-iframe';
 
 export const AUTO_NEXT_SECONDS = 8;
 const SKIP_SECONDS = 10;
 const PROGRESS_POLL_MS = 500;
 const FULLSCREEN_CONTROLS_VISIBLE_MS = 6000;
+const COLLAPSE_CONTROLS_AFTER_PX = 48;
+
+const IDLE_CHECK_MS = 5000;
+
+export const PLAYER_PANEL = {
+  COMMENTS: 'comments',
+  OTHER_VIDEOS: 'other-videos',
+} as const;
+export type PlayerPanel = (typeof PLAYER_PANEL)[keyof typeof PLAYER_PANEL];
+
+let lastChosenPanel: PlayerPanel = PLAYER_PANEL.COMMENTS;
 
 const OVERLAY = {
   NONE: 'none',
-  PAUSED: 'paused',
   ENDED: 'ended',
   LOAD_ERROR: 'load-error',
 } as const;
@@ -35,17 +47,21 @@ type Overlay = (typeof OVERLAY)[keyof typeof OVERLAY];
 @Component({
   selector: 'app-player',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommentsComponent],
+  imports: [CommentsComponent, VideoCardComponent],
+  host: { '(pointerdown)': 'markInteraction()' },
   templateUrl: './player.component.html',
 })
 export class PlayerComponent {
   readonly video = input.required<Video>();
   readonly nextVideo = input<Video | null>(null);
+  readonly startAt = input(0);
+  readonly otherVideos = input<readonly Video[]>([]);
 
   readonly closed = output<void>();
   readonly watched = output<Video>();
   readonly playNext = output<Video>();
   readonly openChannel = output<ChannelRef>();
+  readonly pickVideo = output<Video>();
 
   protected readonly OVERLAY = OVERLAY;
   protected readonly SKIP_SECONDS = SKIP_SECONDS;
@@ -58,6 +74,11 @@ export class PlayerComponent {
   protected readonly duration = signal(0);
   readonly isFullscreen = signal(false);
   protected readonly fullscreenControlsVisible = signal(true);
+  protected readonly controlsCollapsed = signal(false);
+  protected readonly PLAYER_PANEL = PLAYER_PANEL;
+  protected readonly panel = signal<PlayerPanel>(lastChosenPanel);
+  protected readonly others = computed(() => this.otherVideos().filter((v) => v.id !== this.video().id));
+  private lastInteractionMs = Date.now();
 
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('playerHost');
   private player: YtPlayer | null = null;
@@ -79,6 +100,39 @@ export class PlayerComponent {
       const video = this.video();
       untracked(() => void this.open(video));
     });
+
+    const idleTimer = setInterval(() => this.checkIdle(), IDLE_CHECK_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(idleTimer));
+  }
+
+  markInteraction(): void {
+    this.lastInteractionMs = Date.now();
+  }
+
+  protected choosePanel(panel: PlayerPanel): void {
+    lastChosenPanel = panel;
+    this.panel.set(panel);
+  }
+
+  private checkIdle(): void {
+    const idle = {
+      isPlaying: this.isPlaying(),
+      isFullscreen: this.isFullscreen(),
+      lastInteractionMs: this.lastInteractionMs,
+      nowMs: Date.now(),
+    };
+    if (shouldAutoFullscreen(idle)) void this.enterFullscreen();
+  }
+
+  position(): number {
+    return this.player?.getCurrentTime() ?? this.currentTime();
+  }
+
+  protected onInfoScroll(event: Event): void {
+    this.markInteraction();
+    const top = (event.target as HTMLElement).scrollTop;
+    if (top > COLLAPSE_CONTROLS_AFTER_PX) this.controlsCollapsed.set(true);
+    else if (top <= 0) this.controlsCollapsed.set(false);
   }
 
   async enterFullscreen(): Promise<void> {
@@ -88,6 +142,7 @@ export class PlayerComponent {
   }
 
   async exitFullscreen(): Promise<void> {
+    this.markInteraction();
     this.isFullscreen.set(false);
     this.clearControlsTimer();
     await exitDeviceFullscreen();
@@ -164,18 +219,21 @@ export class PlayerComponent {
   }
 
   private async open(video: Video): Promise<void> {
+    const startSeconds = this.startAt();
     this.stopCountdown();
     this.overlay.set(OVERLAY.NONE);
+    this.controlsCollapsed.set(false);
+    this.markInteraction();
     this.started = false;
-    this.currentTime.set(0);
+    this.currentTime.set(startSeconds);
     this.duration.set(video.durationSeconds);
     if (this.player) {
-      this.player.loadVideoById(video.id);
+      this.player.loadVideoById({ videoId: video.id, startSeconds });
       return;
     }
     try {
       const yt = await loadYoutubeIframeApi();
-      this.player = createPlayer(yt, this.host().nativeElement, video.id, {
+      this.player = createPlayer(yt, this.host().nativeElement, video.id, startSeconds, {
         onStateChange: (e) => this.onState(e.data),
         onError: () => this.overlay.set(OVERLAY.LOAD_ERROR),
       });
@@ -198,8 +256,8 @@ export class PlayerComponent {
     } else {
       this.stopProgress();
     }
-    if (state === PLAYER_STATE.PAUSED && this.overlay() === OVERLAY.NONE) {
-      this.overlay.set(OVERLAY.PAUSED);
+    if (state === PLAYER_STATE.PAUSED && this.isFullscreen()) {
+      this.revealFullscreenControls();
     } else if (state === PLAYER_STATE.ENDED) {
       this.overlay.set(OVERLAY.ENDED);
       this.startCountdown();

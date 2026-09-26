@@ -1,11 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { App } from '@capacitor/app';
-import { ChannelPageComponent, ChannelRef, PlayRequest } from './channel/channel-page.component';
+import { ChannelPageComponent, PlayRequest } from './channel/channel-page.component';
 import { AuthStore } from './core/auth.store';
 import { FEED_ERROR, FeedStore } from './core/feed.store';
 import { TAB_LATEST, feedTabs, videosForTab } from './core/feed-view';
 import { Video } from './core/models';
+import {
+  ChannelRef,
+  NavStack,
+  Screen,
+  nextInQueue,
+  playerScreen,
+  popScreen,
+  pushScreen,
+  rememberPlayerPosition,
+  replaceTop,
+  topScreen,
+} from './core/nav-stack';
+import { rootFontSizePx } from './core/ui-scale';
 import { LOCK_WARNING_MINUTES, quietHoursStatus, shouldReturnToLatest } from './core/quiet-hours';
 import { SEARCH_STATE, SearchStore } from './core/search.store';
 import { SettingsStore } from './core/settings.store';
@@ -27,15 +40,11 @@ const SEARCH_STATE_TEXT: Record<string, string> = {
 
 const NETWORK_RETRY_DELAYS_MS: readonly number[] = [3000, 10000, 30000];
 const CLOCK_TICK_MS = 15_000;
+const BRAND_TEXT_MAX_SCALE = 1.15;
 const BACKGROUND_REFRESH_MS = 30 * 60 * 1000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function nextInQueue(queue: readonly Video[], current: Video): Video | null {
-  const index = queue.findIndex((v) => v.id === current.id);
-  return queue[index + 1] ?? queue.find((v) => v.id !== current.id) ?? null;
 }
 
 @Component({
@@ -59,9 +68,8 @@ export class AppComponent implements OnInit {
   private tabSelectedAt = Date.now();
   private lastRefreshAt = 0;
   protected readonly now = signal(new Date());
-  protected readonly playing = signal<Video | null>(null);
-  private readonly playQueue = signal<readonly Video[]>([]);
-  protected readonly channelView = signal<ChannelRef | null>(null);
+  protected readonly stack = signal<NavStack>([]);
+  protected readonly top = computed<Screen | null>(() => topScreen(this.stack()));
   protected readonly settingsOpen = signal(false);
   protected searchText = '';
 
@@ -79,9 +87,19 @@ export class AppComponent implements OnInit {
       new Date(),
     ),
   );
+  protected readonly latestVideos = computed(() =>
+    videosForTab(
+      TAB_LATEST,
+      this.feed.allVideos(),
+      this.settingsStore.settings(),
+      this.feed.stats(),
+      this.watchedStore.watchedIds(),
+      new Date(),
+    ),
+  );
   protected readonly nextVideo = computed(() => {
-    const current = this.playing();
-    return current ? nextInQueue(this.playQueue(), current) : null;
+    const top = this.top();
+    return top?.kind === 'player' ? nextInQueue(top.queue, top.video) : null;
   });
   protected readonly errorText = computed(() => {
     const error = this.feed.error();
@@ -89,6 +107,7 @@ export class AppComponent implements OnInit {
   });
   protected readonly searchStateText = computed(() => SEARCH_STATE_TEXT[this.search.state()] ?? null);
   protected readonly watchedIds = this.watchedStore.watchedIds;
+  protected readonly showsBrandText = computed(() => this.settingsStore.settings().display.uiScale <= BRAND_TEXT_MAX_SCALE);
   protected readonly quietHours = computed(() => this.settingsStore.settings().quietHours);
   protected readonly lockStatus = computed(() => quietHoursStatus(this.quietHours(), this.now()));
   protected readonly isLocked = computed(() => this.lockStatus().locked);
@@ -96,6 +115,12 @@ export class AppComponent implements OnInit {
     const minutes = this.lockStatus().minutesUntilLock;
     return minutes !== null && minutes <= LOCK_WARNING_MINUTES ? minutes : null;
   });
+
+  constructor() {
+    effect(() => {
+      document.documentElement.style.fontSize = `${rootFontSizePx(this.settingsStore.settings().display.uiScale)}px`;
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.settingsStore.load(), this.watchedStore.load(), this.feed.load(), this.auth.restore()]);
@@ -111,29 +136,32 @@ export class AppComponent implements OnInit {
   }
 
   protected play(request: PlayRequest): void {
-    this.playQueue.set(request.queue);
-    this.playing.set(request.video);
+    this.stack.update((stack) => pushScreen(stack, playerScreen(request.video, request.queue)));
   }
 
   protected playFromFeed(video: Video, queue: readonly Video[]): void {
-    this.play({ video, queue });
+    this.stack.set([playerScreen(video, queue)]);
   }
 
   protected playNext(video: Video): void {
-    this.playing.set(video);
+    this.stack.update((stack) => {
+      const top = topScreen(stack);
+      return top?.kind === 'player' ? replaceTop(stack, playerScreen(video, top.queue)) : stack;
+    });
   }
 
-  protected closePlayer(): void {
-    this.playing.set(null);
+  protected pickOtherVideo(video: Video): void {
+    const position = this.player()?.position() ?? 0;
+    this.stack.update((stack) => pushScreen(rememberPlayerPosition(stack, position), playerScreen(video, this.latestVideos())));
+  }
+
+  protected goBack(): void {
+    this.stack.update(popScreen);
   }
 
   protected openChannel(channel: ChannelRef): void {
-    this.playing.set(null);
-    this.channelView.set(channel);
-  }
-
-  protected closeChannel(): void {
-    this.channelView.set(null);
+    const position = this.player()?.position() ?? 0;
+    this.stack.update((stack) => pushScreen(rememberPlayerPosition(stack, position), { kind: 'channel', channel }));
   }
 
   protected markWatched(video: Video): void {
@@ -184,8 +212,7 @@ export class AppComponent implements OnInit {
   private enforceLock(): void {
     const player = this.player();
     if (player?.isFullscreen()) void player.exitFullscreen();
-    this.playing.set(null);
-    this.channelView.set(null);
+    this.stack.set([]);
     if (this.search.isActive()) this.clearSearch();
   }
 
@@ -206,10 +233,9 @@ export class AppComponent implements OnInit {
       return;
     }
     const player = this.player();
-    if (player?.isFullscreen()) void player.exitFullscreen();
-    else if (this.playing()) this.playing.set(null);
-    else if (this.channelView()) this.channelView.set(null);
-    else if (this.settingsOpen()) void this.closeSettings();
+    if (this.settingsOpen()) void this.closeSettings();
+    else if (player?.isFullscreen()) void player.exitFullscreen();
+    else if (this.stack().length > 0) this.goBack();
     else if (this.search.isActive()) this.clearSearch();
     else if (this.selectedTab() !== TAB_LATEST) this.selectTab(TAB_LATEST);
     else void App.minimizeApp();

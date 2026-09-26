@@ -9,7 +9,7 @@
     @if (auth.account(); as account) {
       <form class="flex flex-col gap-2" (ngSubmit)="postComment()">
         <div class="flex items-center gap-3">
-          <img [src]="account.avatarUrl" alt="" class="h-10 w-10 shrink-0 rounded-full bg-white/10" />
+          <app-avatar class="h-10 w-10" [url]="account.avatarUrl" [name]="account.channelTitle" />
           <span class="text-base text-white/70">Bình luận với tên <b class="text-white">{{ account.channelTitle }}</b></span>
         </div>
         <textarea name="draft" rows="3" class="field text-lg" placeholder="Viết bình luận…"
@@ -34,7 +34,7 @@
   <ul class="flex flex-col gap-5">
     @for (thread of threads(); track thread.id) {
       <li class="flex gap-3">
-        <img [src]="thread.top.authorAvatarUrl" alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-full bg-white/10" />
+        <app-avatar class="h-10 w-10" [url]="thread.top.authorAvatarUrl" [name]="thread.top.authorName" />
         <div class="flex min-w-0 flex-1 flex-col gap-1">
           <p class="text-base text-white/60">
             <b class="text-white/90">{{ thread.top.authorName }}</b> · {{ relativeTime(thread.top.publishedAt) }}
@@ -68,7 +68,7 @@
             <ul class="mt-2 flex flex-col gap-4 border-l-2 border-white/10 pl-3">
               @for (reply of items; track reply.id) {
                 <li class="flex gap-3">
-                  <img [src]="reply.authorAvatarUrl" alt="" loading="lazy" class="h-8 w-8 shrink-0 rounded-full bg-white/10" />
+                  <app-avatar class="h-8 w-8 text-sm" [url]="reply.authorAvatarUrl" [name]="reply.authorName" />
                   <div class="min-w-0 flex-1">
                     <p class="text-base text-white/60"><b class="text-white/90">{{ reply.authorName }}</b> · {{ relativeTime(reply.publishedAt) }}</p>
                     <p class="whitespace-pre-line break-words text-lg leading-snug">{{ reply.text }}</p>

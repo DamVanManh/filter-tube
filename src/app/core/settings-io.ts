@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS } from './defaults';
+import { clampUiScale } from './ui-scale';
 import { Settings } from './models';
 
 function isStringArray(value: unknown): value is string[] {
@@ -27,6 +28,17 @@ function parseQuietHours(raw: unknown): Settings['quietHours'] {
   };
 }
 
+function parseDisplay(raw: unknown): Settings['display'] {
+  const fallback = DEFAULT_SETTINGS.display;
+  if (typeof raw !== 'object' || raw === null) return fallback;
+  const r = raw as Record<string, unknown>;
+  const scale = r['uiScale'];
+  return {
+    uiScale: typeof scale === 'number' && Number.isFinite(scale) ? clampUiScale(scale) : fallback.uiScale,
+    fullTitles: typeof r['fullTitles'] === 'boolean' ? r['fullTitles'] : fallback.fullTitles,
+  };
+}
+
 export function parseSettings(raw: unknown): Settings | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
@@ -52,6 +64,7 @@ export function parseSettings(raw: unknown): Settings | null {
     },
     blockedCategoryIds,
     quietHours: parseQuietHours(r['quietHours']),
+    display: parseDisplay(r['display']),
     language: {
       requireVietnamese:
         typeof language['requireVietnamese'] === 'boolean'

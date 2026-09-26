@@ -90,6 +90,11 @@ export interface QuietHours {
   readonly end: string;
 }
 
+export interface DisplayPreferences {
+  readonly uiScale: number;
+  readonly fullTitles: boolean;
+}
+
 export interface LanguageRule {
   readonly requireVietnamese: boolean;
 }
@@ -103,6 +108,7 @@ export interface Settings {
   readonly language: LanguageRule;
   readonly blockedCategoryIds: readonly string[];
   readonly quietHours: QuietHours;
+  readonly display: DisplayPreferences;
 }
 
 export const REJECT_REASON = {

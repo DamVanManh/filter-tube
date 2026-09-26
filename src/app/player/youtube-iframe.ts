@@ -9,7 +9,7 @@ export const PLAYER_STATE = {
 export interface YtPlayer {
   playVideo(): void;
   pauseVideo(): void;
-  loadVideoById(id: string): void;
+  loadVideoById(options: { videoId: string; startSeconds: number }): void;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
@@ -57,7 +57,13 @@ export function loadYoutubeIframeApi(): Promise<YtNamespace> {
   return loading;
 }
 
-export function createPlayer(yt: YtNamespace, element: HTMLElement, videoId: string, events: YtPlayerOptions['events']): YtPlayer {
+export function createPlayer(
+  yt: YtNamespace,
+  element: HTMLElement,
+  videoId: string,
+  startSeconds: number,
+  events: YtPlayerOptions['events'],
+): YtPlayer {
   return new yt.Player(element, {
     videoId,
     host: 'https://www.youtube-nocookie.com',
@@ -65,6 +71,7 @@ export function createPlayer(yt: YtNamespace, element: HTMLElement, videoId: str
     height: '100%',
     playerVars: {
       autoplay: 1,
+      start: Math.floor(startSeconds),
       controls: 0,
       rel: 0,
       fs: 0,

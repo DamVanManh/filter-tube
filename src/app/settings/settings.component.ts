@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { FilterThresholds, QuietHours, Topic } from '../core/models';
+import { DisplayPreferences, FilterThresholds, QuietHours, Topic } from '../core/models';
+import { UI_SCALE_OPTIONS } from '../core/ui-scale';
 import { addTopic as withTopicAdded, editTopic as withTopicEdited } from '../core/topics';
 import { AuthStore, SIGN_IN_OUTCOME } from '../core/auth.store';
 import { SettingsStore } from '../core/settings.store';
@@ -43,6 +44,7 @@ export class SettingsComponent {
 
   protected readonly LOCK = LOCK;
   protected readonly THRESHOLD_FIELDS = THRESHOLD_FIELDS;
+  protected readonly UI_SCALE_OPTIONS = UI_SCALE_OPTIONS;
   protected readonly lock = signal<Lock>(this.store.hasPin() ? LOCK.ENTER : LOCK.CREATE);
   protected readonly message = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -184,6 +186,10 @@ export class SettingsComponent {
   protected async importSettings(): Promise<void> {
     const ok = await this.store.replaceFromJson(this.importText);
     this.message.set(ok ? 'Đã nạp cài đặt.' : 'Nội dung sao lưu không hợp lệ.');
+  }
+
+  protected async setDisplay(change: Partial<DisplayPreferences>): Promise<void> {
+    await this.store.update((s) => ({ ...s, display: { ...s.display, ...change } }));
   }
 
   protected async setQuietHours(change: Partial<QuietHours>): Promise<void> {

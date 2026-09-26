@@ -1,4 +1,6 @@
-# Kênh của Mẹ — đặc tả (2026-09-25)
+# App "YouTube" có lọc cho mẹ — đặc tả (2026-09-25, cập nhật 2026-09-26)
+
+Tên hiển thị của app: **YouTube** (icon kiểu YouTube; app cá nhân, không phát hành).
 
 ## Vấn đề
 Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ vào các kênh không tốt.
@@ -25,9 +27,18 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   rồi sang video kế trong feed.
 - Trang chủ có ô tìm kiếm; kết quả qua đúng bộ lọc như video chủ đề (kênh lạ). Kết quả mỗi từ khóa
   được giữ 6 giờ để tiết kiệm hạn mức. Nút ✕ quay lại các tab.
-- Màn xem video: nút lớn "Xem toàn màn hình" (xoay ngang, ẩn thanh hệ thống; chạm video để hiện nút,
-  tự ẩn sau 6 giây; nút "Thu nhỏ"; Back cũng thoát toàn màn hình). Dưới video: tiêu đề, thời gian đăng,
-  nút "Xem kênh" và bình luận.
+- Màn xem video: video ở trên; khối điều khiển gồm thanh tua, lùi/tới 10 giây, phát/dừng,
+  "← Quay lại", "⛶ Toàn màn hình", và hai nút chọn nội dung bên dưới: "Bình luận" / "Video khác"
+  (video khác = danh sách tab "Mới nhất"; bấm một video sẽ mở nó, Quay lại về video trước).
+  Bên dưới: tiêu đề, thời gian đăng, nút "Xem kênh", rồi nội dung đang chọn. Cuộn xuống đọc thì phần
+  nút điều khiển tự thu gọn (chỉ còn hai nút chọn nội dung); cuộn lên đầu thì hiện lại.
+- Tạm dừng KHÔNG che video — khung hình đang dừng hiện rõ để đọc; chạm video để phát tiếp.
+- Toàn màn hình: xoay ngang, ẩn thanh hệ thống; chạm video để hiện nút (tự ẩn sau 6 giây); "Thu nhỏ"
+  hoặc Back để thoát. Đang phát mà không chạm gì suốt 1 phút ⇒ tự vào toàn màn hình.
+- Điều hướng tới lui giữ nguyên hành trình: mỗi màn (video, trang kênh) chồng lên màn trước;
+  Quay lại / nút Back của Android lùi đúng một bước: về đúng video đang xem (phát tiếp từ chỗ đã
+  dừng), đúng trang kênh (giữ vị trí cuộn), đúng kết quả tìm, đúng tab và vị trí cuộn trang chủ.
+  "Video tiếp theo" tự phát sau khi hết video thì thay video hiện tại (không chồng thêm).
 - Trang kênh: ảnh, tên, số người đăng ký, video của kênh (tải thêm từng trang) — vẫn qua bộ lọc
   (kênh bị chặn ⇒ không hiện video). Xem video từ trang kênh thì "video tiếp theo" lấy từ kênh đó.
 - Bình luận: đọc không cần đăng nhập và không bao giờ hết hạn (xếp theo phổ biến, mở xem trả lời,
@@ -46,7 +57,11 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   và cửa sổ mới ra ngoài app (chỉ cho phép khung nhúng YouTube).
 - Mạng lỗi lúc mở app: tự thử lại (3s, 10s, 30s); mở app từ nền cũng tự tải lại.
 - Video đã xem được đẩy xuống cuối.
-- Cài đặt (khóa PIN, tạo PIN lần đầu): tài khoản Google (đăng nhập/đăng xuất), giờ nghỉ, kênh tin cậy
+- Ảnh đại diện người bình luận: máy chủ ảnh YouTube hay từ chối khi tải nhiều ảnh cùng lúc ⇒ app
+  tự thử lại; vẫn lỗi thì hiện vòng tròn chữ cái đầu tên.
+- Cài đặt (khóa PIN, tạo PIN lần đầu): tài khoản Google (đăng nhập/đăng xuất), hiển thị (cỡ chữ và cỡ
+  nút toàn app: Nhỏ/Vừa/Lớn/Rất lớn/Cực lớn — một thông số phóng cả chữ lẫn bố cục; bật/tắt hiện đầy
+  đủ tiêu đề video thay vì cắt "…", khi bật các thẻ video cao thấp khác nhau), giờ nghỉ, kênh tin cậy
   (thêm bằng @handle hoặc link kênh), chủ đề (thêm, SỬA tên/từ khóa, xóa — sửa từ khóa thì video
   cũ của chủ đề bị bỏ và tải lại), từ cấm, chặn kênh bằng link/@handle, ngưỡng lọc, xuất/nhập JSON.
 - Không server. Dữ liệu nằm trên máy.

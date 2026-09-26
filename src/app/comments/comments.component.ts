@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AvatarComponent } from '../avatar/avatar.component';
 import { AuthStore, SessionExpiredError, SignInRequiredError } from '../core/auth.store';
 import { CommentItem, CommentThread, Page } from '../core/models';
 import { compactCountVi, relativeTimeVi } from '../core/relative-time';
@@ -27,7 +28,7 @@ function noticeForPostError(error: unknown): string {
 @Component({
   selector: 'app-comments',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, AvatarComponent],
   templateUrl: './comments.component.html',
 })
 export class CommentsComponent {
