@@ -90,6 +90,12 @@ export interface QuietHours {
   readonly end: string;
 }
 
+export interface PlaybackPreferences {
+  readonly autoFullscreenSeconds: number;
+  readonly expandControlsSeconds: number;
+  readonly captions: boolean;
+}
+
 export interface DisplayPreferences {
   readonly uiScale: number;
   readonly fullTitles: boolean;
@@ -103,12 +109,14 @@ export interface Settings {
   readonly trustedChannels: readonly TrustedChannel[];
   readonly topics: readonly Topic[];
   readonly bannedKeywords: readonly string[];
+  readonly keywordsVersion: number;
   readonly blockedChannels: readonly BlockedChannel[];
   readonly thresholds: FilterThresholds;
   readonly language: LanguageRule;
   readonly blockedCategoryIds: readonly string[];
   readonly quietHours: QuietHours;
   readonly display: DisplayPreferences;
+  readonly playback: PlaybackPreferences;
 }
 
 export const REJECT_REASON = {

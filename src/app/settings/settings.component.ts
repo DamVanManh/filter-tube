@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DisplayPreferences, FilterThresholds, QuietHours, Topic } from '../core/models';
+import { DisplayPreferences, FilterThresholds, PlaybackPreferences, QuietHours, Topic } from '../core/models';
+import { clampTimerSeconds } from '../core/settings-io';
 import { UI_SCALE_OPTIONS } from '../core/ui-scale';
 import { addTopic as withTopicAdded, editTopic as withTopicEdited } from '../core/topics';
 import { AuthStore, SIGN_IN_OUTCOME } from '../core/auth.store';
@@ -186,6 +187,15 @@ export class SettingsComponent {
   protected async importSettings(): Promise<void> {
     const ok = await this.store.replaceFromJson(this.importText);
     this.message.set(ok ? 'Đã nạp cài đặt.' : 'Nội dung sao lưu không hợp lệ.');
+  }
+
+  protected async setPlayback(change: Partial<PlaybackPreferences>): Promise<void> {
+    await this.store.update((s) => ({ ...s, playback: { ...s.playback, ...change } }));
+  }
+
+  protected async setPlaybackSeconds(key: 'autoFullscreenSeconds' | 'expandControlsSeconds', raw: string): Promise<void> {
+    const value = Number(raw);
+    if (Number.isFinite(value)) await this.setPlayback({ [key]: clampTimerSeconds(value) });
   }
 
   protected async setDisplay(change: Partial<DisplayPreferences>): Promise<void> {

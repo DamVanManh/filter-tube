@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS } from './defaults';
 import { QuietHours } from './models';
-import { quietHoursStatus, shouldReturnToLatest, TAB_RETURN_AFTER_MS } from './quiet-hours';
+import { UNLOCK_CHOICE, quietHoursEnd, quietHoursStatus, shouldReturnToLatest, TAB_RETURN_AFTER_MS, unlockedUntil } from './quiet-hours';
 
 function at(clock: string): Date {
   return new Date(`2026-09-26T${clock}:00`);
@@ -51,5 +51,22 @@ describe('shouldReturnToLatest', () => {
     expect(shouldReturnToLatest(false, 0, TAB_RETURN_AFTER_MS - 1)).toBe(false);
     expect(shouldReturnToLatest(false, 0, TAB_RETURN_AFTER_MS)).toBe(true);
     expect(shouldReturnToLatest(true, 0, TAB_RETURN_AFTER_MS * 5)).toBe(false);
+  });
+});
+
+describe('unlocking during quiet hours', () => {
+  it('stays open until the unlock runs out, counting the minutes left as a warning', () => {
+    const now = at('23:30');
+    const until = unlockedUntil(UNLOCK_CHOICE.HALF_HOUR, NIGHT, now);
+    expect(quietHoursStatus(NIGHT, now, until)).toEqual({ locked: false, minutesUntilLock: 30 });
+    expect(quietHoursStatus(NIGHT, new Date(until - 4 * 60_000), until)).toEqual({ locked: false, minutesUntilLock: 4 });
+    expect(quietHoursStatus(NIGHT, new Date(until), until).locked).toBe(true);
+  });
+
+  it('can unlock for an hour or until the schedule opens the app next morning', () => {
+    const now = at('23:30');
+    expect(unlockedUntil(UNLOCK_CHOICE.ONE_HOUR, NIGHT, now) - now.getTime()).toBe(60 * 60_000);
+    expect(new Date(unlockedUntil(UNLOCK_CHOICE.UNTIL_MORNING, NIGHT, now))).toEqual(new Date('2026-09-27T06:00:00'));
+    expect(quietHoursEnd(NIGHT, at('02:00'))).toEqual(new Date('2026-09-26T06:00:00'));
   });
 });

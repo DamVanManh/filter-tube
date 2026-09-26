@@ -19,7 +19,8 @@ import {
   topScreen,
 } from './core/nav-stack';
 import { rootFontSizePx } from './core/ui-scale';
-import { LOCK_WARNING_MINUTES, quietHoursStatus, shouldReturnToLatest } from './core/quiet-hours';
+import { LOCK_WARNING_MINUTES, UNLOCK_CHOICE, UnlockChoice, quietHoursStatus, shouldReturnToLatest, unlockedUntil } from './core/quiet-hours';
+import { readJson, writeJson } from './core/storage';
 import { SEARCH_STATE, SearchStore } from './core/search.store';
 import { SettingsStore } from './core/settings.store';
 import { WatchedStore } from './core/watched.store';
@@ -41,6 +42,7 @@ const SEARCH_STATE_TEXT: Record<string, string> = {
 const NETWORK_RETRY_DELAYS_MS: readonly number[] = [3000, 10000, 30000];
 const CLOCK_TICK_MS = 15_000;
 const BRAND_TEXT_MAX_SCALE = 1.15;
+const UNLOCKED_UNTIL_KEY = 'quiet-unlocked-until';
 const BACKGROUND_REFRESH_MS = 30 * 60 * 1000;
 
 function delay(ms: number): Promise<void> {
@@ -109,8 +111,15 @@ export class AppComponent implements OnInit {
   protected readonly watchedIds = this.watchedStore.watchedIds;
   protected readonly showsBrandText = computed(() => this.settingsStore.settings().display.uiScale <= BRAND_TEXT_MAX_SCALE);
   protected readonly quietHours = computed(() => this.settingsStore.settings().quietHours);
-  protected readonly lockStatus = computed(() => quietHoursStatus(this.quietHours(), this.now()));
+  private readonly unlockedUntilMs = signal(0);
+  protected readonly lockStatus = computed(() => quietHoursStatus(this.quietHours(), this.now(), this.unlockedUntilMs()));
+  protected readonly UNLOCK_CHOICE = UNLOCK_CHOICE;
+  protected readonly unlockFormOpen = signal(false);
+  protected readonly unlockError = signal<string | null>(null);
+  protected readonly hasPin = this.settingsStore.hasPin;
+  protected unlockPin = '';
   protected readonly isLocked = computed(() => this.lockStatus().locked);
+  protected readonly playback = computed(() => this.settingsStore.settings().playback);
   protected readonly lockWarning = computed(() => {
     const minutes = this.lockStatus().minutesUntilLock;
     return minutes !== null && minutes <= LOCK_WARNING_MINUTES ? minutes : null;
@@ -124,9 +133,30 @@ export class AppComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.settingsStore.load(), this.watchedStore.load(), this.feed.load(), this.auth.restore()]);
+    this.unlockedUntilMs.set((await readJson<number>(UNLOCKED_UNTIL_KEY)) ?? 0);
     this.ready.set(true);
     await this.listenToApp();
     this.startClock();
+  }
+
+  protected openUnlockForm(): void {
+    this.unlockPin = '';
+    this.unlockError.set(null);
+    this.unlockFormOpen.set(true);
+  }
+
+  protected async unlock(choice: UnlockChoice): Promise<void> {
+    const pin = this.unlockPin.trim();
+    this.unlockPin = '';
+    if (!(await this.settingsStore.verifyPin(pin))) {
+      this.unlockError.set('Sai mã PIN.');
+      return;
+    }
+    const until = unlockedUntil(choice, this.quietHours(), new Date());
+    this.unlockedUntilMs.set(until);
+    await writeJson(UNLOCKED_UNTIL_KEY, until);
+    this.unlockFormOpen.set(false);
+    this.tick();
   }
 
   protected selectTab(id: string): void {

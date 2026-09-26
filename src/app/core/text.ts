@@ -2,12 +2,23 @@ export function stripDiacritics(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
 }
 
+const VIETNAMESE_TONE_MARKS = /[\u0300\u0301\u0303\u0309\u0323]/gu;
+
+function withToneMarkAtWordEnd(word: string): string {
+  const decomposed = word.normalize('NFD');
+  const tones = decomposed.match(VIETNAMESE_TONE_MARKS)?.join('') ?? '';
+  return decomposed.replace(VIETNAMESE_TONE_MARKS, '') + tones;
+}
+
 export function toWordSequence(text: string): string {
   return text
     .normalize('NFC')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
+    .trim()
+    .split(' ')
+    .map(withToneMarkAtWordEnd)
+    .join(' ');
 }
 
 export function hasDiacritics(text: string): boolean {

@@ -56,6 +56,27 @@
       </section>
 
       <section class="flex flex-col gap-3">
+        <h2 class="text-xl font-semibold">Phát video</h2>
+        <label class="flex flex-col gap-1">
+          <span class="text-base">Tự vào toàn màn hình khi không chạm gì (giây, 0 = tắt)</span>
+          <input class="field max-w-[10rem]" type="number" min="0" max="3600" step="10" inputmode="numeric"
+                 [value]="store.settings().playback.autoFullscreenSeconds"
+                 (change)="setPlaybackSeconds('autoFullscreenSeconds', $any($event.target).value)" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-base">Mở lại nút điều khiển khi ngừng cuộn (giây, 0 = không tự mở)</span>
+          <input class="field max-w-[10rem]" type="number" min="0" max="3600" step="5" inputmode="numeric"
+                 [value]="store.settings().playback.expandControlsSeconds"
+                 (change)="setPlaybackSeconds('expandControlsSeconds', $any($event.target).value)" />
+        </label>
+        <label class="flex items-center gap-3 text-lg">
+          <input type="checkbox" class="h-6 w-6 shrink-0 accent-brand" [checked]="store.settings().playback.captions"
+                 (change)="setPlayback({ captions: $any($event.target).checked })" />
+          Hiện phụ đề (CC)
+        </label>
+      </section>
+
+      <section class="flex flex-col gap-3">
         <h2 class="text-xl font-semibold">Giờ nghỉ</h2>
         <p class="text-base text-white/60">Trong giờ nghỉ app tự dừng video và khóa lại, báo trước 5 phút.</p>
         <label class="flex items-center gap-3 text-lg">
@@ -65,11 +86,11 @@
         </label>
         <div class="flex flex-wrap items-center gap-3 text-lg">
           <label class="flex items-center gap-2 whitespace-nowrap">Khóa lúc
-            <input type="time" class="field w-36" [value]="store.settings().quietHours.start"
+            <input type="time" class="field w-36 max-w-[10rem]" [value]="store.settings().quietHours.start"
                    (change)="setQuietTime('start', $any($event.target).value)" />
           </label>
           <label class="flex items-center gap-2 whitespace-nowrap">Mở lúc
-            <input type="time" class="field w-36" [value]="store.settings().quietHours.end"
+            <input type="time" class="field w-36 max-w-[10rem]" [value]="store.settings().quietHours.end"
                    (change)="setQuietTime('end', $any($event.target).value)" />
           </label>
         </div>
@@ -102,7 +123,7 @@
           <input name="topicQuery" class="field" placeholder="Từ khóa tìm, ví dụ: trích đoạn cải lương xưa" [(ngModel)]="topicQuery" />
           <button type="submit" class="btn-primary">Thêm chủ đề</button>
         </form>
-        <ul class="flex flex-col gap-2">
+        <ul class="flex max-h-[22rem] flex-col gap-2 overflow-y-auto rounded-xl border border-white/10 p-2" aria-label="Danh sách chủ đề">
           @for (t of store.settings().topics; track t.id) {
             @if (editingTopicId() === t.id) {
               <li class="flex flex-col gap-2 rounded-xl bg-white/10 p-3">
@@ -133,7 +154,8 @@
           <input name="keyword" class="field" placeholder="Nhiều từ cách nhau bằng dấu phẩy" [(ngModel)]="keywordInput" />
           <button type="submit" class="btn-primary shrink-0">Thêm</button>
         </form>
-        <div class="flex flex-wrap gap-2">
+        <p class="text-base text-white/60">{{ store.settings().bannedKeywords.length }} từ — bấm vào một từ để xóa.</p>
+        <div class="flex max-h-[14rem] flex-wrap content-start gap-2 overflow-y-auto rounded-xl border border-white/10 p-2" aria-label="Danh sách từ cấm">
           @for (w of store.settings().bannedKeywords; track w) {
             <button type="button" class="rounded-full bg-white/10 px-3 py-1 text-base" (click)="removeKeyword(w)">{{ w }} ✕</button>
           }
@@ -162,9 +184,9 @@
       <section class="flex flex-col gap-3">
         <h2 class="text-xl font-semibold">Ngưỡng lọc</h2>
         @for (f of THRESHOLD_FIELDS; track f.key) {
-          <label class="flex items-center justify-between gap-3">
+          <label class="flex flex-col gap-1">
             <span class="text-base">{{ f.label }}</span>
-            <input class="field w-32 text-right" type="number" min="0" [step]="f.step"
+            <input class="field max-w-[10rem]" type="number" min="0" [step]="f.step"
                    [value]="store.settings().thresholds[f.key]"
                    (change)="setThreshold(f.key, $any($event.target).value)" />
           </label>

@@ -32,12 +32,15 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   (video khác = danh sách tab "Mới nhất"; bấm một video sẽ mở nó, Quay lại về video trước).
   Bên dưới: tiêu đề, thời gian đăng, nút "Xem kênh", rồi nội dung đang chọn. Cuộn (lên hay xuống
   đều vậy) thì phần nút điều khiển thu gọn, chỉ còn hai nút chọn nội dung; không cuộn nữa trong 1
-  phút, hoặc chạm vào video, thì phần nút mở rộng lại (chạm video lúc đang thu gọn chỉ mở rộng, không
+  khoảng thời gian cài đặt (mặc định 30 giây, 0 = không tự mở), hoặc chạm vào video, thì phần nút mở rộng lại (chạm video lúc đang thu gọn chỉ mở rộng, không
   tạm dừng). Các nút chia cột theo độ rộng màn hình, chữ xuống dòng khi màn hình hẹp — không bao giờ
   tràn/cắt mép. Màn hình hẹp hơn 380px (hoặc cỡ chữ từ "Rất lớn") thì đầu trang chỉ hiện logo.
 - Tạm dừng KHÔNG che video — khung hình đang dừng hiện rõ để đọc; chạm video để phát tiếp.
 - Toàn màn hình: xoay ngang, ẩn thanh hệ thống; chạm video để hiện nút (tự ẩn sau 6 giây); "Thu nhỏ"
-  hoặc Back để thoát. Đang phát mà không chạm gì suốt 1 phút ⇒ tự vào toàn màn hình.
+  hoặc Back để thoát. Đang phát mà không chạm gì ⇒ tự vào toàn màn hình (mặc định 60 giây, chỉnh trong
+  Cài đặt, 0 = tắt).
+- Phụ đề (CC): mặc định TẮT; bật trong Cài đặt thì hiện phụ đề (ưu tiên tiếng Việt).
+- Giao diện luôn tối, kể cả màn chờ lúc mở app và thanh trạng thái, bất kể điện thoại đặt sáng hay tối.
 - Điều hướng tới lui giữ nguyên hành trình: mỗi màn (video, trang kênh) chồng lên màn trước;
   Quay lại / nút Back của Android lùi đúng một bước: về đúng video đang xem (phát tiếp từ chỗ đã
   dừng), đúng trang kênh (giữ vị trí cuộn), đúng kết quả tìm, đúng tab và vị trí cuộn trang chủ.
@@ -53,7 +56,9 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
 - Chọn một chủ đề: sau 30 phút app tự quay về tab "Mới nhất".
 - Giờ nghỉ (mặc định bật, 23:00 → 06:00, sửa trong cài đặt): báo trước 5 phút bằng thông báo nổi
   (kể cả khi đang xem video); tới giờ thì thoát toàn màn hình, dừng video, hiện màn "Đến giờ nghỉ rồi"
-  với giờ mở lại; chỉ vào được cài đặt bằng PIN.
+  với giờ mở lại. Tại màn khóa có "Mở khóa": nhập mã PIN rồi chọn mở 30 phút / 1 giờ / tới giờ mở
+  buổi sáng (mở tạm thời được nhớ cả khi tắt app; sắp hết thì báo trước 5 phút rồi khóa lại). Chưa có
+  PIN thì phải vào Cài đặt tạo PIN trước.
 - Làm mới: tự tải lại mỗi 30 phút khi app mở, khi mở app lên từ nền; kênh tin cậy 1 giờ/lần, chủ đề
   4 giờ/lần, luân phiên khoảng tìm 1 năm / 30 ngày / 7 ngày để luôn có video mới.
 - Không có đường nào rời app sang YouTube: lớp chắn chạm + tầng Android chặn mọi điều hướng
@@ -62,7 +67,10 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
 - Video đã xem được đẩy xuống cuối.
 - Ảnh đại diện người bình luận: máy chủ ảnh YouTube hay từ chối khi tải nhiều ảnh cùng lúc ⇒ app
   tự thử lại; vẫn lỗi thì hiện vòng tròn chữ cái đầu tên.
-- Cài đặt (khóa PIN, tạo PIN lần đầu): tài khoản Google (đăng nhập/đăng xuất), hiển thị (cỡ chữ và cỡ
+- Từ cấm mới do app bổ sung ở các bản cập nhật được tự thêm vào danh sách đã lưu trên máy (không
+  thêm lại từ người quản lý đã xóa sau lần cập nhật đó). So khớp coi "hoạ"/"họa", "thuỷ"/"thủy" là một.
+- Cài đặt (khóa PIN, tạo PIN lần đầu): danh sách chủ đề và từ cấm nằm trong khung cuộn riêng (không
+  chiếm cả trang); phát video (2 hẹn giờ + phụ đề); tài khoản Google (đăng nhập/đăng xuất), hiển thị (cỡ chữ và cỡ
   nút toàn app: Nhỏ/Vừa/Lớn/Rất lớn/Cực lớn — một thông số phóng cả chữ lẫn bố cục; bật/tắt hiện đầy
   đủ tiêu đề video thay vì cắt "…", khi bật các thẻ video cao thấp khác nhau), giờ nghỉ, kênh tin cậy
   (thêm bằng @handle hoặc link kênh), chủ đề (thêm, SỬA tên/từ khóa, xóa — sửa từ khóa thì video

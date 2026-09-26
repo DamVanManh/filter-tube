@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS } from './defaults';
+import { withNewKeywordReleases } from './keyword-releases';
 import { clampUiScale } from './ui-scale';
 import { Settings } from './models';
 
@@ -39,12 +40,33 @@ function parseDisplay(raw: unknown): Settings['display'] {
   };
 }
 
+export const MAX_TIMER_SECONDS = 3600;
+
+export function clampTimerSeconds(seconds: number): number {
+  return Math.round(Math.min(MAX_TIMER_SECONDS, Math.max(0, seconds)));
+}
+
+function parsePlayback(raw: unknown): Settings['playback'] {
+  const fallback = DEFAULT_SETTINGS.playback;
+  if (typeof raw !== 'object' || raw === null) return fallback;
+  const r = raw as Record<string, unknown>;
+  const seconds = (value: unknown, otherwise: number): number =>
+    typeof value === 'number' && Number.isFinite(value) ? clampTimerSeconds(value) : otherwise;
+  return {
+    autoFullscreenSeconds: seconds(r['autoFullscreenSeconds'], fallback.autoFullscreenSeconds),
+    expandControlsSeconds: seconds(r['expandControlsSeconds'], fallback.expandControlsSeconds),
+    captions: typeof r['captions'] === 'boolean' ? r['captions'] : fallback.captions,
+  };
+}
+
 export function parseSettings(raw: unknown): Settings | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
   if (!isObjectArrayWith(r['trustedChannels'], ['id', 'title', 'uploadsPlaylistId'])) return null;
   if (!isObjectArrayWith(r['topics'], ['id', 'label', 'query'])) return null;
   if (!isStringArray(r['bannedKeywords'])) return null;
+  const storedKeywordsVersion = typeof r['keywordsVersion'] === 'number' ? r['keywordsVersion'] : 1;
+  const keywords = withNewKeywordReleases(r['bannedKeywords'], storedKeywordsVersion);
   if (!isObjectArrayWith(r['blockedChannels'], ['id', 'title'])) return null;
   const blockedCategoryIds = isStringArray(r['blockedCategoryIds']) ? r['blockedCategoryIds'] : DEFAULT_SETTINGS.blockedCategoryIds;
   const t = (typeof r['thresholds'] === 'object' && r['thresholds'] !== null ? r['thresholds'] : {}) as Record<string, unknown>;
@@ -54,7 +76,8 @@ export function parseSettings(raw: unknown): Settings | null {
   return {
     trustedChannels: r['trustedChannels'] as Settings['trustedChannels'],
     topics: r['topics'] as Settings['topics'],
-    bannedKeywords: r['bannedKeywords'],
+    bannedKeywords: keywords.keywords,
+    keywordsVersion: keywords.version,
     blockedChannels: r['blockedChannels'] as Settings['blockedChannels'],
     thresholds: {
       minDurationMinutes: num('minDurationMinutes'),
@@ -65,6 +88,7 @@ export function parseSettings(raw: unknown): Settings | null {
     blockedCategoryIds,
     quietHours: parseQuietHours(r['quietHours']),
     display: parseDisplay(r['display']),
+    playback: parsePlayback(r['playback']),
     language: {
       requireVietnamese:
         typeof language['requireVietnamese'] === 'boolean'

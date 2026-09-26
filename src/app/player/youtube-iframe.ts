@@ -13,6 +13,8 @@ export interface YtPlayer {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
+  loadModule(module: string): void;
+  unloadModule(module: string): void;
   destroy(): void;
 }
 
@@ -26,6 +28,7 @@ interface YtPlayerOptions {
     onReady?: () => void;
     onStateChange?: (event: { data: number }) => void;
     onError?: (event: { data: number }) => void;
+    onApiChange?: () => void;
   };
 }
 
@@ -62,6 +65,7 @@ export function createPlayer(
   element: HTMLElement,
   videoId: string,
   startSeconds: number,
+  captions: boolean,
   events: YtPlayerOptions['events'],
 ): YtPlayer {
   return new yt.Player(element, {
@@ -78,10 +82,20 @@ export function createPlayer(
       iv_load_policy: 3,
       playsinline: 1,
       disablekb: 1,
-      cc_load_policy: 0,
+      cc_load_policy: captions ? 1 : 0,
+      cc_lang_pref: 'vi',
       hl: 'vi',
       origin: window.location.origin,
     },
     events,
   });
+}
+
+export const CAPTIONS_MODULE = 'captions';
+
+export function applyCaptions(player: YtPlayer, captions: boolean): void {
+  try {
+    if (captions) player.loadModule(CAPTIONS_MODULE);
+    else player.unloadModule(CAPTIONS_MODULE);
+  } catch {}
 }

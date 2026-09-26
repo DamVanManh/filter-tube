@@ -1,3 +1,4 @@
+import { LATEST_KEYWORD_VERSION } from './keyword-releases';
 import { Settings } from './models';
 
 export const YOUTUBE_CATEGORY = {
@@ -31,8 +32,10 @@ export const DEFAULT_SETTINGS: Settings = {
     'xuyên không', 'xuyên thành', 'trọng sinh', 'ngôn tình', 'tổng tài', 'full có kết', 'full bộ',
     'review truyện', 'truyện audio', 'thần y', 'bá đạo', 'ác nữ', 'nữ phụ', 'phản diện', 'review phim',
     'tóm tắt phim', 'thế giới ngả mũ', 'thán phục',
+    'thảm họa', 'bí truyền', 'tuyệt chiêu',
     'loại lá', 'chữa', 'trị dứt', 'dứt điểm', 'hết đau', 'hết bệnh', 'sống được bao lâu', 'dấu hiệu này',
   ],
+  keywordsVersion: LATEST_KEYWORD_VERSION,
   blockedChannels: [],
   thresholds: {
     minDurationMinutes: 3,
@@ -43,6 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: { requireVietnamese: true },
   quietHours: { enabled: true, start: '23:00', end: '06:00' },
   display: { uiScale: 1, fullTitles: false },
+  playback: { autoFullscreenSeconds: 60, expandControlsSeconds: 30, captions: false },
   blockedCategoryIds: [
     YOUTUBE_CATEGORY.FILM_AND_ANIMATION,
     YOUTUBE_CATEGORY.GAMING,

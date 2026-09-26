@@ -92,6 +92,9 @@
       (watched)="markWatched($event)"
       (playNext)="playNext($event)"
       [otherVideos]="latestVideos()"
+      [autoFullscreenSeconds]="playback().autoFullscreenSeconds"
+      [expandControlsSeconds]="playback().expandControlsSeconds"
+      [captions]="playback().captions"
       (openChannel)="openChannel($event)"
       (pickVideo)="pickOtherVideo($event)"
     />
@@ -100,7 +103,7 @@
 
 @if (lockWarning(); as minutes) {
   <p role="status" class="safe-top pointer-events-none fixed inset-x-0 top-0 z-[46] bg-sky-900/95 px-4 py-3 text-center text-lg font-semibold text-white">
-    Còn {{ minutes }} phút nữa là đến giờ nghỉ ({{ quietHours().start }})
+    Còn {{ minutes }} phút nữa là app khóa lại (giờ nghỉ)
   </p>
 }
 
@@ -111,7 +114,30 @@
     <p class="max-w-md text-xl text-white/70">
       App sẽ mở lại lúc <b class="text-white">{{ quietHours().end }}</b>. Chúc ngủ ngon!
     </p>
-    <button type="button" class="btn-ghost mt-8 text-base" (click)="settingsOpen.set(true)">Cài đặt (cần mã PIN)</button>
+    @if (!unlockFormOpen()) {
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <button type="button" class="btn-ghost" (click)="openUnlockForm()">🔓 Mở khóa</button>
+        <button type="button" class="btn-ghost" (click)="settingsOpen.set(true)">⚙ Cài đặt</button>
+      </div>
+    } @else if (!hasPin()) {
+      <p class="mt-6 max-w-md text-lg text-amber-200">Chưa có mã PIN. Vào Cài đặt để tạo mã PIN trước.</p>
+      <button type="button" class="btn-ghost" (click)="settingsOpen.set(true)">⚙ Cài đặt</button>
+    } @else {
+      <form class="mt-6 flex w-full max-w-sm flex-col gap-3" (ngSubmit)="unlock(UNLOCK_CHOICE.HALF_HOUR)">
+        <label for="unlock-pin" class="text-lg">Nhập mã PIN rồi chọn thời gian mở</label>
+        <input id="unlock-pin" name="unlockPin" type="password" inputmode="numeric" autocomplete="off"
+               class="field text-center text-2xl tracking-[0.5em]" [(ngModel)]="unlockPin" />
+        @if (unlockError(); as error) {
+          <p class="text-amber-200">{{ error }}</p>
+        }
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" class="btn-primary px-2" (click)="unlock(UNLOCK_CHOICE.HALF_HOUR)">30 phút</button>
+          <button type="button" class="btn-primary px-2" (click)="unlock(UNLOCK_CHOICE.ONE_HOUR)">1 giờ</button>
+          <button type="button" class="btn-primary px-2 leading-tight" (click)="unlock(UNLOCK_CHOICE.UNTIL_MORNING)">Tới {{ quietHours().end }}</button>
+        </div>
+        <button type="button" class="btn-ghost" (click)="unlockFormOpen.set(false)">Thôi</button>
+      </form>
+    }
   </div>
 }
 

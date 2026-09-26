@@ -19,13 +19,12 @@ import { Video } from '../core/models';
 import { relativeTimeVi } from '../core/relative-time';
 import { enterDeviceFullscreen, exitDeviceFullscreen } from '../native/player-chrome';
 import { VideoCardComponent, formatDuration } from '../video-card/video-card.component';
-import { PLAYER_STATE, YtPlayer, createPlayer, loadYoutubeIframeApi } from './youtube-iframe';
+import { PLAYER_STATE, YtPlayer, applyCaptions, createPlayer, loadYoutubeIframeApi } from './youtube-iframe';
 
 export const AUTO_NEXT_SECONDS = 8;
 const SKIP_SECONDS = 10;
 const PROGRESS_POLL_MS = 500;
 const FULLSCREEN_CONTROLS_VISIBLE_MS = 6000;
-const EXPAND_CONTROLS_AFTER_IDLE_MS = 60_000;
 const IGNORE_LAYOUT_SCROLL_MS = 500;
 
 const IDLE_CHECK_MS = 5000;
@@ -57,6 +56,9 @@ export class PlayerComponent {
   readonly nextVideo = input<Video | null>(null);
   readonly startAt = input(0);
   readonly otherVideos = input<readonly Video[]>([]);
+  readonly autoFullscreenSeconds = input(60);
+  readonly expandControlsSeconds = input(30);
+  readonly captions = input(false);
 
   readonly closed = output<void>();
   readonly watched = output<Video>();
@@ -105,6 +107,11 @@ export class PlayerComponent {
       untracked(() => void this.open(video));
     });
 
+    effect(() => {
+      const captions = this.captions();
+      if (this.player) applyCaptions(this.player, captions);
+    });
+
     const idleTimer = setInterval(() => this.checkIdle(), IDLE_CHECK_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(idleTimer));
   }
@@ -124,6 +131,7 @@ export class PlayerComponent {
       isFullscreen: this.isFullscreen(),
       lastInteractionMs: this.lastInteractionMs,
       nowMs: Date.now(),
+      afterSeconds: this.autoFullscreenSeconds(),
     };
     if (shouldAutoFullscreen(idle)) void this.enterFullscreen();
   }
@@ -141,7 +149,9 @@ export class PlayerComponent {
 
   private scheduleControlsExpand(): void {
     this.clearExpandTimer();
-    this.expandTimer = setTimeout(() => this.expandControls(), EXPAND_CONTROLS_AFTER_IDLE_MS);
+    const seconds = this.expandControlsSeconds();
+    if (seconds <= 0) return;
+    this.expandTimer = setTimeout(() => this.expandControls(), seconds * 1000);
   }
 
   private expandControls(): void {
@@ -254,8 +264,11 @@ export class PlayerComponent {
     }
     try {
       const yt = await loadYoutubeIframeApi();
-      this.player = createPlayer(yt, this.host().nativeElement, video.id, startSeconds, {
+      this.player = createPlayer(yt, this.host().nativeElement, video.id, startSeconds, this.captions(), {
         onStateChange: (e) => this.onState(e.data),
+        onApiChange: () => {
+          if (this.player) applyCaptions(this.player, this.captions());
+        },
         onError: () => this.overlay.set(OVERLAY.LOAD_ERROR),
       });
     } catch {
@@ -270,6 +283,7 @@ export class PlayerComponent {
         this.started = true;
         this.watched.emit(this.video());
       }
+      if (this.player) applyCaptions(this.player, this.captions());
       const reported = this.player?.getDuration() ?? 0;
       if (reported > 0) this.duration.set(reported);
       this.overlay.set(OVERLAY.NONE);

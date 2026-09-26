@@ -127,6 +127,14 @@ describe('containsBannedKeyword', () => {
     expect(containsBannedKeyword('Sóc Trăng quê tôi', ['soc'])).toBe(true);
   });
 
+  it('treats old and new Vietnamese tone placement as the same word', () => {
+    expect(containsBannedKeyword('Tưới Muối Cho Cây - Đại Thảm Họa Hay Tuyệt Chiêu Bí Truyền?', ['thảm hoạ'])).toBe(true);
+    expect(containsBannedKeyword('Đại thảm hoạ', ['thảm họa'])).toBe(true);
+    expect(containsBannedKeyword('Hoà bình', ['hòa'])).toBe(true);
+    expect(containsBannedKeyword('Thuỷ sản', ['thủy'])).toBe(true);
+    expect(containsBannedKeyword('Món ngon Sóc Trăng', ['sốc'])).toBe(false);
+  });
+
   it('matches multi-word phrases across punctuation', () => {
     expect(containsBannedKeyword('Chuyện này... lộ   clip!!', ['lộ clip'])).toBe(true);
     expect(containsBannedKeyword('Chuyện lộ ra, clip hay', ['lộ clip'])).toBe(false);

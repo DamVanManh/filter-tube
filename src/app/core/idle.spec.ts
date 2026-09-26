@@ -1,16 +1,18 @@
-import { AUTO_FULLSCREEN_AFTER_MS, shouldAutoFullscreen } from './idle';
+import { shouldAutoFullscreen } from './idle';
 
-const base = { isPlaying: true, isFullscreen: false, lastInteractionMs: 0 };
+const base = { isPlaying: true, isFullscreen: false, lastInteractionMs: 0, afterSeconds: 60 };
 
 describe('shouldAutoFullscreen', () => {
-  it('switches to fullscreen after one untouched minute of playback', () => {
-    expect(shouldAutoFullscreen({ ...base, nowMs: AUTO_FULLSCREEN_AFTER_MS - 1 })).toBe(false);
-    expect(shouldAutoFullscreen({ ...base, nowMs: AUTO_FULLSCREEN_AFTER_MS })).toBe(true);
+  it('switches to fullscreen after the configured untouched time of playback', () => {
+    expect(shouldAutoFullscreen({ ...base, nowMs: 59_999 })).toBe(false);
+    expect(shouldAutoFullscreen({ ...base, nowMs: 60_000 })).toBe(true);
+    expect(shouldAutoFullscreen({ ...base, afterSeconds: 10, nowMs: 10_000 })).toBe(true);
   });
 
-  it('never triggers while paused or when already fullscreen', () => {
-    expect(shouldAutoFullscreen({ ...base, isPlaying: false, nowMs: 10 * AUTO_FULLSCREEN_AFTER_MS })).toBe(false);
-    expect(shouldAutoFullscreen({ ...base, isFullscreen: true, nowMs: 10 * AUTO_FULLSCREEN_AFTER_MS })).toBe(false);
+  it('never triggers while paused, when already fullscreen, or when turned off with 0', () => {
+    expect(shouldAutoFullscreen({ ...base, isPlaying: false, nowMs: 600_000 })).toBe(false);
+    expect(shouldAutoFullscreen({ ...base, isFullscreen: true, nowMs: 600_000 })).toBe(false);
+    expect(shouldAutoFullscreen({ ...base, afterSeconds: 0, nowMs: 600_000 })).toBe(false);
   });
 
   it('measures from the latest interaction', () => {
