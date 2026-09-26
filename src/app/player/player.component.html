@@ -64,31 +64,31 @@
                  [max]="duration()" [value]="currentTime()" (change)="seekTo($any($event.target).value)" />
           <span>{{ clockText(duration()) }}</span>
         </div>
-        <div class="flex items-center justify-center gap-4">
-          <button type="button" class="btn-ghost w-24" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
-          <button type="button" class="btn-primary w-28 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
+        <div class="grid grid-cols-[1fr_1.3fr_1fr] gap-2">
+          <button type="button" class="btn-ghost min-w-0 whitespace-nowrap px-1" (click)="skip(-SKIP_SECONDS)" aria-label="Lùi 10 giây">⟲ 10</button>
+          <button type="button" class="btn-primary min-w-0 px-2 text-2xl" (click)="togglePlay()" [attr.aria-label]="isPlaying() ? 'Dừng' : 'Phát'">
             {{ isPlaying() ? '❚❚' : '▶' }}
           </button>
-          <button type="button" class="btn-ghost w-24" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
+          <button type="button" class="btn-ghost min-w-0 whitespace-nowrap px-1" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
         </div>
-        <div class="flex gap-3">
-          <button type="button" class="btn-ghost flex-1 whitespace-nowrap px-3" (click)="close()">← Quay lại</button>
-          <button type="button" class="btn-ghost flex-[1.4] whitespace-nowrap px-3" (click)="enterFullscreen()">⛶ Toàn màn hình</button>
+        <div class="grid grid-cols-2 gap-2 text-[0.9rem]">
+          <button type="button" class="btn-ghost min-w-0 px-2 text-center leading-tight" (click)="close()">← Quay lại</button>
+          <button type="button" class="btn-ghost min-w-0 px-2 text-center leading-tight" (click)="enterFullscreen()">⛶ Toàn màn hình</button>
         </div>
       </div>
-      <div class="flex gap-3 py-3" role="tablist">
-        <button type="button" role="tab" class="btn flex-1 whitespace-nowrap px-3"
+      <div class="grid grid-cols-2 gap-2 py-3 text-[0.9rem]" role="tablist">
+        <button type="button" role="tab" class="btn min-w-0 px-2 text-center leading-tight"
                 [attr.aria-selected]="panel() === PLAYER_PANEL.COMMENTS"
                 [class]="panel() === PLAYER_PANEL.COMMENTS ? 'bg-white text-black' : 'bg-white/10 text-white'"
                 (click)="choosePanel(PLAYER_PANEL.COMMENTS)">💬 Bình luận</button>
-        <button type="button" role="tab" class="btn flex-1 whitespace-nowrap px-3"
+        <button type="button" role="tab" class="btn min-w-0 px-2 text-center leading-tight"
                 [attr.aria-selected]="panel() === PLAYER_PANEL.OTHER_VIDEOS"
                 [class]="panel() === PLAYER_PANEL.OTHER_VIDEOS ? 'bg-white text-black' : 'bg-white/10 text-white'"
                 (click)="choosePanel(PLAYER_PANEL.OTHER_VIDEOS)">▶ Video khác</button>
       </div>
     </div>
 
-    <div class="safe-bottom flex-1 overflow-y-auto px-4 pb-8 pt-4" data-testid="player-info" (scroll)="onInfoScroll($event)">
+    <div class="safe-bottom flex-1 overflow-y-auto px-4 pb-8 pt-4" data-testid="player-info" (scroll)="onInfoScroll()">
       <h1 class="text-xl font-bold leading-snug">{{ video().title }}</h1>
       <p class="mt-1 text-base text-white/60">{{ relativeTime(video().publishedAt) }}</p>
       <button type="button" class="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left active:opacity-70"

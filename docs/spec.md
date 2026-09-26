@@ -30,8 +30,11 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
 - Màn xem video: video ở trên; khối điều khiển gồm thanh tua, lùi/tới 10 giây, phát/dừng,
   "← Quay lại", "⛶ Toàn màn hình", và hai nút chọn nội dung bên dưới: "Bình luận" / "Video khác"
   (video khác = danh sách tab "Mới nhất"; bấm một video sẽ mở nó, Quay lại về video trước).
-  Bên dưới: tiêu đề, thời gian đăng, nút "Xem kênh", rồi nội dung đang chọn. Cuộn xuống đọc thì phần
-  nút điều khiển tự thu gọn (chỉ còn hai nút chọn nội dung); cuộn lên đầu thì hiện lại.
+  Bên dưới: tiêu đề, thời gian đăng, nút "Xem kênh", rồi nội dung đang chọn. Cuộn (lên hay xuống
+  đều vậy) thì phần nút điều khiển thu gọn, chỉ còn hai nút chọn nội dung; không cuộn nữa trong 1
+  phút, hoặc chạm vào video, thì phần nút mở rộng lại (chạm video lúc đang thu gọn chỉ mở rộng, không
+  tạm dừng). Các nút chia cột theo độ rộng màn hình, chữ xuống dòng khi màn hình hẹp — không bao giờ
+  tràn/cắt mép. Màn hình hẹp hơn 380px (hoặc cỡ chữ từ "Rất lớn") thì đầu trang chỉ hiện logo.
 - Tạm dừng KHÔNG che video — khung hình đang dừng hiện rõ để đọc; chạm video để phát tiếp.
 - Toàn màn hình: xoay ngang, ẩn thanh hệ thống; chạm video để hiện nút (tự ẩn sau 6 giây); "Thu nhỏ"
   hoặc Back để thoát. Đang phát mà không chạm gì suốt 1 phút ⇒ tự vào toàn màn hình.

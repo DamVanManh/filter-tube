@@ -25,7 +25,8 @@ export const AUTO_NEXT_SECONDS = 8;
 const SKIP_SECONDS = 10;
 const PROGRESS_POLL_MS = 500;
 const FULLSCREEN_CONTROLS_VISIBLE_MS = 6000;
-const COLLAPSE_CONTROLS_AFTER_PX = 48;
+const EXPAND_CONTROLS_AFTER_IDLE_MS = 60_000;
+const IGNORE_LAYOUT_SCROLL_MS = 500;
 
 const IDLE_CHECK_MS = 5000;
 
@@ -79,6 +80,8 @@ export class PlayerComponent {
   protected readonly panel = signal<PlayerPanel>(lastChosenPanel);
   protected readonly others = computed(() => this.otherVideos().filter((v) => v.id !== this.video().id));
   private lastInteractionMs = Date.now();
+  private expandTimer: ReturnType<typeof setTimeout> | null = null;
+  private ignoreScrollUntilMs = 0;
 
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('playerHost');
   private player: YtPlayer | null = null;
@@ -92,6 +95,7 @@ export class PlayerComponent {
       this.stopCountdown();
       this.stopProgress();
       this.clearControlsTimer();
+      this.clearExpandTimer();
       if (this.isFullscreen()) void exitDeviceFullscreen();
       this.player?.destroy();
     });
@@ -128,11 +132,27 @@ export class PlayerComponent {
     return this.player?.getCurrentTime() ?? this.currentTime();
   }
 
-  protected onInfoScroll(event: Event): void {
+  protected onInfoScroll(): void {
+    if (Date.now() < this.ignoreScrollUntilMs) return;
     this.markInteraction();
-    const top = (event.target as HTMLElement).scrollTop;
-    if (top > COLLAPSE_CONTROLS_AFTER_PX) this.controlsCollapsed.set(true);
-    else if (top <= 0) this.controlsCollapsed.set(false);
+    this.controlsCollapsed.set(true);
+    this.scheduleControlsExpand();
+  }
+
+  private scheduleControlsExpand(): void {
+    this.clearExpandTimer();
+    this.expandTimer = setTimeout(() => this.expandControls(), EXPAND_CONTROLS_AFTER_IDLE_MS);
+  }
+
+  private expandControls(): void {
+    this.clearExpandTimer();
+    this.ignoreScrollUntilMs = Date.now() + IGNORE_LAYOUT_SCROLL_MS;
+    this.controlsCollapsed.set(false);
+  }
+
+  private clearExpandTimer(): void {
+    if (this.expandTimer !== null) clearTimeout(this.expandTimer);
+    this.expandTimer = null;
   }
 
   async enterFullscreen(): Promise<void> {
@@ -150,7 +170,8 @@ export class PlayerComponent {
 
   protected onVideoTap(): void {
     if (!this.isFullscreen()) {
-      this.togglePlay();
+      if (this.controlsCollapsed()) this.expandControls();
+      else this.togglePlay();
       return;
     }
     if (this.fullscreenControlsVisible()) {
@@ -222,7 +243,7 @@ export class PlayerComponent {
     const startSeconds = this.startAt();
     this.stopCountdown();
     this.overlay.set(OVERLAY.NONE);
-    this.controlsCollapsed.set(false);
+    this.expandControls();
     this.markInteraction();
     this.started = false;
     this.currentTime.set(startSeconds);
