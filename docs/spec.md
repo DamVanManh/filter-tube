@@ -30,9 +30,12 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   nút "Xem kênh" và bình luận.
 - Trang kênh: ảnh, tên, số người đăng ký, video của kênh (tải thêm từng trang) — vẫn qua bộ lọc
   (kênh bị chặn ⇒ không hiện video). Xem video từ trang kênh thì "video tiếp theo" lấy từ kênh đó.
-- Bình luận: đọc không cần đăng nhập (xếp theo phổ biến, mở xem trả lời, tải thêm). Đăng nhập Google
-  (chỉ xin quyền YouTube để bình luận) thì viết bình luận và trả lời. Video xem trong app vẫn không
-  ghi vào lịch sử YouTube. Video tắt bình luận ⇒ báo rõ.
+- Bình luận: đọc không cần đăng nhập và không bao giờ hết hạn (xếp theo phổ biến, mở xem trả lời,
+  tải thêm). Đăng nhập Google CHỈ làm được trong Cài đặt (sau mã PIN); màn xem video không có nút
+  đăng nhập. Khi đã đăng nhập thì có ô viết bình luận và nút trả lời. Google (app ở chế độ Testing)
+  bắt cấp lại quyền khoảng 7 ngày/lần: khi đó app KHÔNG tự hiện màn đăng nhập mà lặng lẽ đăng xuất —
+  ô viết bình luận biến mất, đọc vẫn bình thường — cho tới khi người quản lý đăng nhập lại trong Cài
+  đặt. Video xem trong app vẫn không ghi vào lịch sử YouTube. Video tắt bình luận ⇒ báo rõ.
 - Chọn một chủ đề: sau 30 phút app tự quay về tab "Mới nhất".
 - Giờ nghỉ (mặc định bật, 23:00 → 06:00, sửa trong cài đặt): báo trước 5 phút bằng thông báo nổi
   (kể cả khi đang xem video); tới giờ thì thoát toàn màn hình, dừng video, hiện màn "Đến giờ nghỉ rồi"

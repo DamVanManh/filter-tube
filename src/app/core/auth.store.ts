@@ -24,6 +24,12 @@ export class SignInRequiredError extends Error {
   }
 }
 
+export class SessionExpiredError extends Error {
+  constructor() {
+    super('Google session expired');
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly api = inject(YoutubeApi);
@@ -33,6 +39,7 @@ export class AuthStore {
 
   async restore(): Promise<void> {
     this.account.set(await readJson<SignedInAccount>(SIGNED_IN_KEY));
+    if (this.account()) void this.accessToken().catch(() => undefined);
   }
 
   async signIn(): Promise<SignInOutcome> {
@@ -50,9 +57,7 @@ export class AuthStore {
 
   async signOut(): Promise<void> {
     const token = this.token?.value;
-    this.token = null;
-    this.account.set(null);
-    await writeJson(SIGNED_IN_KEY, null);
+    await this.forgetAccount();
     if (token) {
       try {
         await CapacitorHttp.post({ url: REVOKE_URL, params: { token }, headers: {} });
@@ -66,9 +71,16 @@ export class AuthStore {
     try {
       return await this.authorize(false);
     } catch (error) {
-      if (errorCodeOf(error) === GOOGLE_AUTH_ERROR.NEEDS_INTERACTION) return this.authorize(true);
-      throw error;
+      if (errorCodeOf(error) !== GOOGLE_AUTH_ERROR.NEEDS_INTERACTION) throw error;
+      await this.forgetAccount();
+      throw new SessionExpiredError();
     }
+  }
+
+  private async forgetAccount(): Promise<void> {
+    this.token = null;
+    this.account.set(null);
+    await writeJson(SIGNED_IN_KEY, null);
   }
 
   private async authorize(interactive: boolean): Promise<string> {

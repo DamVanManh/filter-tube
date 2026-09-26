@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthStore, SIGN_IN_OUTCOME, SignInRequiredError } from '../core/auth.store';
-import { CommentItem, CommentThread } from '../core/models';
+import { AuthStore, SessionExpiredError, SignInRequiredError } from '../core/auth.store';
+import { CommentItem, CommentThread, Page } from '../core/models';
 import { compactCountVi, relativeTimeVi } from '../core/relative-time';
 import { COMMENTS_DISABLED_REASON, YoutubeApi, YoutubeApiError } from '../core/youtube-api';
 
 const MAX_COMMENT_LENGTH = 10_000;
+const RETRY_DELAY_MS = 2000;
 
 const LOAD_STATE = {
   IDLE: 'idle',
@@ -15,11 +16,13 @@ const LOAD_STATE = {
 } as const;
 type LoadState = (typeof LOAD_STATE)[keyof typeof LOAD_STATE];
 
-const SIGN_IN_MESSAGE: Record<string, string> = {
-  [SIGN_IN_OUTCOME.CANCELLED]: 'Chưa đăng nhập.',
-  [SIGN_IN_OUTCOME.NO_CHANNEL]: 'Tài khoản này chưa có kênh YouTube nên chưa bình luận được. Mở app YouTube một lần để tạo kênh.',
-  [SIGN_IN_OUTCOME.FAILED]: 'Đăng nhập không thành công. Thử lại sau.',
-};
+function noticeForPostError(error: unknown): string {
+  if (error instanceof SessionExpiredError) {
+    return 'Đăng nhập Google đã hết hạn nên chưa gửi được. Nhờ người quản lý đăng nhập lại trong Cài đặt.';
+  }
+  if (error instanceof SignInRequiredError) return 'Chưa đăng nhập Google.';
+  return 'Chưa gửi được bình luận. Kiểm tra mạng rồi thử lại.';
+}
 
 @Component({
   selector: 'app-comments',
@@ -74,11 +77,6 @@ export class CommentsComponent {
     }
   }
 
-  protected async signIn(): Promise<void> {
-    const outcome = await this.auth.signIn();
-    this.notice.set(outcome === SIGN_IN_OUTCOME.SIGNED_IN ? null : (SIGN_IN_MESSAGE[outcome] ?? null));
-  }
-
   protected startReply(threadId: string): void {
     this.replyingTo.set(this.replyingTo() === threadId ? null : threadId);
     this.replyDraft = '';
@@ -112,11 +110,7 @@ export class CommentsComponent {
     try {
       await action(await this.auth.accessToken());
     } catch (error) {
-      this.notice.set(
-        error instanceof SignInRequiredError
-          ? 'Cần đăng nhập để bình luận.'
-          : 'Chưa gửi được bình luận. Kiểm tra mạng rồi thử lại.',
-      );
+      this.notice.set(noticeForPostError(error));
     } finally {
       this.posting.set(false);
     }
@@ -132,11 +126,21 @@ export class CommentsComponent {
     await this.loadPage(videoId, null);
   }
 
+  private async fetchPageRetryingOnce(videoId: string, pageToken: string | null): Promise<Page<CommentThread>> {
+    try {
+      return await this.api.commentThreads(videoId, pageToken);
+    } catch (error) {
+      if (error instanceof YoutubeApiError && error.reason === COMMENTS_DISABLED_REASON) throw error;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      return this.api.commentThreads(videoId, pageToken);
+    }
+  }
+
   private async loadPage(videoId: string, pageToken: string | null): Promise<void> {
     if (this.state() === LOAD_STATE.LOADING) return;
     this.state.set(LOAD_STATE.LOADING);
     try {
-      const page = await this.api.commentThreads(videoId, pageToken);
+      const page = await this.fetchPageRetryingOnce(videoId, pageToken);
       if (videoId !== this.videoId()) return;
       this.threads.update((list) => [...list, ...page.items]);
       this.nextPageToken.set(page.nextPageToken);
