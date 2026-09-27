@@ -36,6 +36,9 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   tạm dừng). Các nút chia cột theo độ rộng màn hình, chữ xuống dòng khi màn hình hẹp — không bao giờ
   tràn/cắt mép. Màn hình hẹp hơn 380px (hoặc cỡ chữ từ "Rất lớn") thì đầu trang chỉ hiện logo.
 - Tạm dừng KHÔNG che video — khung hình đang dừng hiện rõ để đọc; chạm video để phát tiếp.
+- Trang chủ: cuộn xuống (quá chiều cao phần đầu trang) thì phần đầu trang (logo, tìm kiếm, tab) trượt
+  ẩn đi; cuộn lên một chút là hiện lại ngay; ở sát đầu trang thì luôn hiện; đổi tab cũng hiện lại. Thanh
+  trạng thái điện thoại luôn có nền tối, chữ/biểu tượng trắng, nội dung không trượt vào dưới nó.
 - Chữ không đủ chỗ (tên kênh, tiêu đề khi tắt "hiện đầy đủ", dòng kênh · thời gian, tên trong cài
   đặt…) KHÔNG bao giờ bị cắt bằng "…": luôn một dòng, và nếu dài hơn chỗ hiển thị thì chạy chữ liên tục,
   hai bản nối đuôi nhau, tốc độ chậm (chỉnh trong Cài đặt: Rất chậm/Chậm/Vừa/Nhanh). Chữ vừa chỗ thì

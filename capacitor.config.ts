@@ -9,6 +9,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     CapacitorHttp: { enabled: false },
+    SystemBars: { style: 'DARK' },
   },
 };
 

@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { App } from '@capacitor/app';
 import { ChannelPageComponent, PlayRequest } from './channel/channel-page.component';
@@ -19,6 +30,7 @@ import {
   topScreen,
 } from './core/nav-stack';
 import { rootFontSizePx } from './core/ui-scale';
+import { HeaderScrollState, nextHeaderState } from './core/header-visibility';
 import { LOCK_WARNING_MINUTES, UNLOCK_CHOICE, UnlockChoice, quietHoursStatus, shouldReturnToLatest, unlockedUntil } from './core/quiet-hours';
 import { readJson, writeJson } from './core/storage';
 import { SEARCH_STATE, SearchStore } from './core/search.store';
@@ -64,6 +76,9 @@ export class AppComponent implements OnInit {
   protected readonly search = inject(SearchStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly player = viewChild(PlayerComponent);
+  private readonly header = viewChild.required<ElementRef<HTMLElement>>('pageHeader');
+  private headerScroll: HeaderScrollState = { visible: true, lastY: 0 };
+  protected readonly headerVisible = signal(true);
 
   protected readonly SEARCH_STATE = SEARCH_STATE;
   protected readonly ready = signal(false);
@@ -138,6 +153,21 @@ export class AppComponent implements OnInit {
     this.ready.set(true);
     await this.listenToApp();
     this.startClock();
+    this.followPageScroll();
+  }
+
+  private followPageScroll(): void {
+    const onScroll = () => {
+      this.headerScroll = nextHeaderState(this.headerScroll, window.scrollY, this.header().nativeElement.offsetHeight);
+      this.headerVisible.set(this.headerScroll.visible);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    this.destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
+  }
+
+  private revealHeader(): void {
+    this.headerScroll = { visible: true, lastY: window.scrollY };
+    this.headerVisible.set(true);
   }
 
   protected openUnlockForm(): void {
@@ -163,6 +193,7 @@ export class AppComponent implements OnInit {
   protected selectTab(id: string): void {
     this.activeTab.set(id);
     this.tabSelectedAt = Date.now();
+    this.revealHeader();
     window.scrollTo({ top: 0 });
   }
 
