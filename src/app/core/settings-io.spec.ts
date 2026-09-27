@@ -25,10 +25,10 @@ describe('parseSettings', () => {
   });
 
   it('reads the playback timers and captions, clamping timers to 0–3600 seconds', () => {
-    expect(DEFAULT_SETTINGS.playback).toEqual({ autoFullscreenSeconds: 60, expandControlsSeconds: 30, captions: false });
+    expect(DEFAULT_SETTINGS.playback).toEqual({ autoFullscreenSeconds: 60, expandControlsSeconds: 30, captions: false, fullscreenControlsSeconds: 4 });
     const custom = parseSettings({ ...DEFAULT_SETTINGS, playback: { autoFullscreenSeconds: 120, expandControlsSeconds: -5, captions: true } });
-    expect(custom?.playback).toEqual({ autoFullscreenSeconds: 120, expandControlsSeconds: 0, captions: true });
+    expect(custom?.playback).toEqual({ autoFullscreenSeconds: 120, expandControlsSeconds: 0, captions: true, fullscreenControlsSeconds: 4 });
     const huge = parseSettings({ ...DEFAULT_SETTINGS, playback: { autoFullscreenSeconds: 99999 } });
-    expect(huge?.playback).toEqual({ autoFullscreenSeconds: 3600, expandControlsSeconds: 30, captions: false });
+    expect(huge?.playback).toEqual({ autoFullscreenSeconds: 3600, expandControlsSeconds: 30, captions: false, fullscreenControlsSeconds: 4 });
   });
 });

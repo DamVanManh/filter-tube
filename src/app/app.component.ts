@@ -27,6 +27,7 @@ import { WatchedStore } from './core/watched.store';
 import { PlayerComponent } from './player/player.component';
 import { SettingsComponent } from './settings/settings.component';
 import { VideoCardComponent } from './video-card/video-card.component';
+import { MarqueeComponent } from './marquee/marquee.component';
 
 const ERROR_TEXT: Record<string, string> = {
   [FEED_ERROR.QUOTA]: 'Hôm nay đã tải đủ lượt, mai sẽ có video mới. Vẫn xem được video bên dưới.',
@@ -52,7 +53,7 @@ function delay(ms: number): Promise<void> {
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PlayerComponent, SettingsComponent, ChannelPageComponent, VideoCardComponent],
+  imports: [FormsModule, PlayerComponent, SettingsComponent, ChannelPageComponent, VideoCardComponent, MarqueeComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent implements OnInit {

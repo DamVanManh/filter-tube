@@ -1,5 +1,6 @@
 import { DEFAULT_SETTINGS } from './defaults';
 import { withNewKeywordReleases } from './keyword-releases';
+import { clampMarqueeSpeed } from './marquee';
 import { clampUiScale } from './ui-scale';
 import { Settings } from './models';
 
@@ -37,6 +38,10 @@ function parseDisplay(raw: unknown): Settings['display'] {
   return {
     uiScale: typeof scale === 'number' && Number.isFinite(scale) ? clampUiScale(scale) : fallback.uiScale,
     fullTitles: typeof r['fullTitles'] === 'boolean' ? r['fullTitles'] : fallback.fullTitles,
+    marqueeSpeed:
+      typeof r['marqueeSpeed'] === 'number' && Number.isFinite(r['marqueeSpeed'])
+        ? clampMarqueeSpeed(r['marqueeSpeed'])
+        : fallback.marqueeSpeed,
   };
 }
 
@@ -56,6 +61,7 @@ function parsePlayback(raw: unknown): Settings['playback'] {
     autoFullscreenSeconds: seconds(r['autoFullscreenSeconds'], fallback.autoFullscreenSeconds),
     expandControlsSeconds: seconds(r['expandControlsSeconds'], fallback.expandControlsSeconds),
     captions: typeof r['captions'] === 'boolean' ? r['captions'] : fallback.captions,
+    fullscreenControlsSeconds: Math.max(1, seconds(r['fullscreenControlsSeconds'], fallback.fullscreenControlsSeconds)),
   };
 }
 

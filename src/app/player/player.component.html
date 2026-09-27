@@ -10,7 +10,7 @@
         <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-hidden bg-black p-4 text-center">
           @if (nextVideo(); as next) {
             <p class="text-white/70">Video tiếp theo sau {{ countdown() }} giây</p>
-            <p class="line-clamp-2 max-w-md text-xl font-semibold">{{ next.title }}</p>
+            <app-marquee class="w-full max-w-md text-xl font-semibold" [text]="next.title" />
             <div class="flex flex-wrap justify-center gap-3">
               <button type="button" class="btn-primary" (click)="goNext()">▶ Xem ngay</button>
               <button type="button" class="btn-ghost" (click)="close()">← Quay lại</button>
@@ -94,9 +94,9 @@
       <p class="mt-1 text-base text-white/60">{{ relativeTime(video().publishedAt) }}</p>
       <button type="button" class="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left active:opacity-70"
               (click)="showChannel()">
-        <span class="min-w-0">
+        <span class="min-w-0 flex-1">
           <span class="block text-base text-white/60">Kênh</span>
-          <span class="block truncate text-xl font-semibold">{{ video().channelTitle }}</span>
+          <app-marquee class="text-xl font-semibold" [text]="video().channelTitle" />
         </span>
         <span class="shrink-0 text-lg font-semibold text-sky-300">Xem kênh ›</span>
       </button>

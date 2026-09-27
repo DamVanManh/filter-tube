@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MarqueeComponent } from '../marquee/marquee.component';
 import { DisplayPreferences, FilterThresholds, PlaybackPreferences, QuietHours, Topic } from '../core/models';
 import { clampTimerSeconds } from '../core/settings-io';
+import { MARQUEE_SPEED_OPTIONS } from '../core/marquee';
 import { UI_SCALE_OPTIONS } from '../core/ui-scale';
 import { addTopic as withTopicAdded, editTopic as withTopicEdited } from '../core/topics';
 import { AuthStore, SIGN_IN_OUTCOME } from '../core/auth.store';
@@ -33,7 +35,7 @@ const THRESHOLD_FIELDS: readonly ThresholdField[] = [
 @Component({
   selector: 'app-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, MarqueeComponent],
   templateUrl: './settings.component.html',
 })
 export class SettingsComponent {
@@ -46,6 +48,7 @@ export class SettingsComponent {
   protected readonly LOCK = LOCK;
   protected readonly THRESHOLD_FIELDS = THRESHOLD_FIELDS;
   protected readonly UI_SCALE_OPTIONS = UI_SCALE_OPTIONS;
+  protected readonly MARQUEE_SPEED_OPTIONS = MARQUEE_SPEED_OPTIONS;
   protected readonly lock = signal<Lock>(this.store.hasPin() ? LOCK.ENTER : LOCK.CREATE);
   protected readonly message = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -193,9 +196,14 @@ export class SettingsComponent {
     await this.store.update((s) => ({ ...s, playback: { ...s.playback, ...change } }));
   }
 
-  protected async setPlaybackSeconds(key: 'autoFullscreenSeconds' | 'expandControlsSeconds', raw: string): Promise<void> {
+  protected async setPlaybackSeconds(
+    key: 'autoFullscreenSeconds' | 'expandControlsSeconds' | 'fullscreenControlsSeconds',
+    raw: string,
+  ): Promise<void> {
     const value = Number(raw);
-    if (Number.isFinite(value)) await this.setPlayback({ [key]: clampTimerSeconds(value) });
+    if (!Number.isFinite(value)) return;
+    const seconds = clampTimerSeconds(value);
+    await this.setPlayback({ [key]: key === 'fullscreenControlsSeconds' ? Math.max(1, seconds) : seconds });
   }
 
   protected async setDisplay(change: Partial<DisplayPreferences>): Promise<void> {

@@ -12,3 +12,10 @@ body { @apply bg-neutral-950 text-white antialiased; overscroll-behavior: none; 
   .btn-ghost { @apply btn bg-white/10 text-white; }
   .field { @apply w-full rounded-xl bg-white/10 px-4 py-3 text-white placeholder:text-white/40 outline-none focus:ring-2 focus:ring-brand; }
 }
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-1 * var(--marquee-shift))); }
+}
+.marquee-run { animation: marquee-scroll linear infinite; will-change: transform; }
+.marquee-paused { animation-play-state: paused; }

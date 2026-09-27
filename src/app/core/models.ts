@@ -94,11 +94,13 @@ export interface PlaybackPreferences {
   readonly autoFullscreenSeconds: number;
   readonly expandControlsSeconds: number;
   readonly captions: boolean;
+  readonly fullscreenControlsSeconds: number;
 }
 
 export interface DisplayPreferences {
   readonly uiScale: number;
   readonly fullTitles: boolean;
+  readonly marqueeSpeed: number;
 }
 
 export interface LanguageRule {

@@ -18,12 +18,12 @@ describe('ui scale', () => {
 
 describe('display preferences in saved settings', () => {
   it('defaults to normal size with short titles', () => {
-    expect(DEFAULT_SETTINGS.display).toEqual({ uiScale: 1, fullTitles: false });
+    expect(DEFAULT_SETTINGS.display).toEqual({ uiScale: 1, fullTitles: false, marqueeSpeed: 30 });
   });
 
   it('reads saved values, clamps an out-of-range scale, and falls back when missing', () => {
-    expect(parseSettings({ ...DEFAULT_SETTINGS, display: { uiScale: 1.3, fullTitles: true } })?.display).toEqual({ uiScale: 1.3, fullTitles: true });
-    expect(parseSettings({ ...DEFAULT_SETTINGS, display: { uiScale: 9 } })?.display).toEqual({ uiScale: 1.6, fullTitles: false });
+    expect(parseSettings({ ...DEFAULT_SETTINGS, display: { uiScale: 1.3, fullTitles: true } })?.display).toEqual({ uiScale: 1.3, fullTitles: true, marqueeSpeed: 30 });
+    expect(parseSettings({ ...DEFAULT_SETTINGS, display: { uiScale: 9 } })?.display).toEqual({ uiScale: 1.6, fullTitles: false, marqueeSpeed: 30 });
     const { display: _omitted, ...withoutDisplay } = DEFAULT_SETTINGS;
     expect(parseSettings(withoutDisplay)?.display).toEqual(DEFAULT_SETTINGS.display);
   });

@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { ChannelRef } from '../core/nav-stack';
 import { CommentsComponent } from '../comments/comments.component';
+import { MarqueeComponent } from '../marquee/marquee.component';
 import { shouldAutoFullscreen } from '../core/idle';
 import { Video } from '../core/models';
 import { relativeTimeVi } from '../core/relative-time';
@@ -24,7 +25,6 @@ import { PLAYER_STATE, YtPlayer, applyCaptions, createPlayer, loadYoutubeIframeA
 export const AUTO_NEXT_SECONDS = 8;
 const SKIP_SECONDS = 10;
 const PROGRESS_POLL_MS = 500;
-const FULLSCREEN_CONTROLS_VISIBLE_MS = 6000;
 const IGNORE_LAYOUT_SCROLL_MS = 500;
 
 const IDLE_CHECK_MS = 5000;
@@ -47,7 +47,7 @@ type Overlay = (typeof OVERLAY)[keyof typeof OVERLAY];
 @Component({
   selector: 'app-player',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommentsComponent, VideoCardComponent],
+  imports: [CommentsComponent, VideoCardComponent, MarqueeComponent],
   host: { '(pointerdown)': 'markInteraction()' },
   templateUrl: './player.component.html',
 })
@@ -59,6 +59,7 @@ export class PlayerComponent {
   readonly autoFullscreenSeconds = input(60);
   readonly expandControlsSeconds = input(30);
   readonly captions = input(false);
+  readonly fullscreenControlsSeconds = input(4);
 
   readonly closed = output<void>();
   readonly watched = output<Video>();
@@ -184,17 +185,23 @@ export class PlayerComponent {
       else this.togglePlay();
       return;
     }
-    if (this.fullscreenControlsVisible()) {
-      this.fullscreenControlsVisible.set(false);
-      this.clearControlsTimer();
+    if (!this.isPlaying()) {
+      this.resume();
+      this.revealFullscreenControls();
+    } else if (this.fullscreenControlsVisible()) {
+      this.hideFullscreenControls();
     } else {
       this.revealFullscreenControls();
     }
   }
 
   protected togglePlay(): void {
-    if (this.isPlaying()) this.player?.pauseVideo();
-    else this.resume();
+    if (this.isPlaying()) {
+      this.player?.pauseVideo();
+      if (this.isFullscreen()) this.hideFullscreenControls();
+      return;
+    }
+    this.resume();
     if (this.isFullscreen()) this.revealFullscreenControls();
   }
 
@@ -239,9 +246,12 @@ export class PlayerComponent {
   private revealFullscreenControls(): void {
     this.fullscreenControlsVisible.set(true);
     this.clearControlsTimer();
-    this.controlsTimer = setTimeout(() => {
-      if (this.isPlaying()) this.fullscreenControlsVisible.set(false);
-    }, FULLSCREEN_CONTROLS_VISIBLE_MS);
+    this.controlsTimer = setTimeout(() => this.hideFullscreenControls(), this.fullscreenControlsSeconds() * 1000);
+  }
+
+  private hideFullscreenControls(): void {
+    this.clearControlsTimer();
+    this.fullscreenControlsVisible.set(false);
   }
 
   private clearControlsTimer(): void {
@@ -292,7 +302,7 @@ export class PlayerComponent {
       this.stopProgress();
     }
     if (state === PLAYER_STATE.PAUSED && this.isFullscreen()) {
-      this.revealFullscreenControls();
+      this.hideFullscreenControls();
     } else if (state === PLAYER_STATE.ENDED) {
       this.overlay.set(OVERLAY.ENDED);
       this.startCountdown();

@@ -8,11 +8,10 @@
       <span class="absolute left-2 top-2 rounded-lg bg-black/80 px-2 py-0.5 text-base">Đã xem</span>
     }
   </div>
-  <p class="mt-2 text-xl font-semibold leading-snug" [class.line-clamp-2]="!fullTitles()">{{ video().title }}</p>
-  <p class="mt-1 text-lg text-white/60">
-    @if (showChannel()) {
-      {{ video().channelTitle }} ·
-    }
-    {{ relativeTime(video().publishedAt) }}
-  </p>
+  @if (fullTitles()) {
+    <p class="mt-2 text-xl font-semibold leading-snug">{{ video().title }}</p>
+  } @else {
+    <app-marquee class="mt-2 text-xl font-semibold leading-snug" [text]="video().title" />
+  }
+  <app-marquee class="mt-1 text-lg text-white/60" [text]="metaLine()" />
 </button>

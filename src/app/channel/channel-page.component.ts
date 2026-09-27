@@ -7,6 +7,7 @@ import { keepAcceptable } from '../core/video-filter';
 import { WatchedStore } from '../core/watched.store';
 import { CHANNEL_PAGE_SIZE, YoutubeApi } from '../core/youtube-api';
 import { VideoCardComponent } from '../video-card/video-card.component';
+import { MarqueeComponent } from '../marquee/marquee.component';
 
 export interface PlayRequest {
   readonly video: Video;
@@ -16,7 +17,7 @@ export interface PlayRequest {
 @Component({
   selector: 'app-channel-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [VideoCardComponent],
+  imports: [VideoCardComponent, MarqueeComponent],
   templateUrl: './channel-page.component.html',
 })
 export class ChannelPageComponent {

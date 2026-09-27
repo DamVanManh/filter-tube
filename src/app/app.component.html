@@ -5,7 +5,7 @@
       <path d="M11 5.5v9l7.5-4.5z" fill="#fff" />
     </svg>
     <div class="min-w-0 flex-1">
-      <h1 class="truncate text-xl font-bold max-[379px]:sr-only" [class.sr-only]="!showsBrandText()">YouTube</h1>
+      <h1 class="text-xl font-bold max-[379px]:sr-only" [class.sr-only]="!showsBrandText()"><app-marquee text="YouTube" /></h1>
     </div>
     <button type="button" class="btn-ghost h-11 min-h-0 w-11 shrink-0 px-0" [disabled]="feed.loading()" (click)="refresh()" aria-label="Tải video mới">
       <span class="inline-block" [class.animate-spin]="feed.loading()">⟳</span>
@@ -95,6 +95,7 @@
       [autoFullscreenSeconds]="playback().autoFullscreenSeconds"
       [expandControlsSeconds]="playback().expandControlsSeconds"
       [captions]="playback().captions"
+      [fullscreenControlsSeconds]="playback().fullscreenControlsSeconds"
       (openChannel)="openChannel($event)"
       (pickVideo)="pickOtherVideo($event)"
     />

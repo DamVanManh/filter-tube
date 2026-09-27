@@ -24,9 +24,9 @@
         <p class="text-base text-white/60">Chỉ dùng để đọc và viết bình luận. Video xem trong app không ghi vào lịch sử YouTube.</p>
         @if (auth.account(); as account) {
           <div class="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-4 py-2">
-            <span class="flex min-w-0 items-center gap-3">
+            <span class="flex min-w-0 flex-1 items-center gap-3">
               <img [src]="account.avatarUrl" alt="" class="h-10 w-10 shrink-0 rounded-full bg-white/10" />
-              <span class="truncate">{{ account.channelTitle }}</span>
+              <app-marquee class="min-w-0 flex-1" [text]="account.channelTitle" />
             </span>
             <button type="button" class="btn-ghost shrink-0" (click)="signOut()">Đăng xuất</button>
           </div>
@@ -51,8 +51,19 @@
         <label class="flex items-center gap-3 text-lg">
           <input type="checkbox" class="h-6 w-6 shrink-0 accent-brand" [checked]="store.settings().display.fullTitles"
                  (change)="setDisplay({ fullTitles: $any($event.target).checked })" />
-          Hiện đầy đủ tiêu đề video (không cắt bớt bằng “…”)
+          Hiện đầy đủ tiêu đề video (nhiều dòng); tắt thì tiêu đề chạy chữ trên một dòng
         </label>
+        <p class="text-base text-white/60">Tốc độ chữ chạy (khi chữ dài hơn chỗ hiển thị)</p>
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Tốc độ chữ chạy">
+          @for (option of MARQUEE_SPEED_OPTIONS; track option.value) {
+            <button type="button" role="radio" class="btn px-4"
+                    [attr.aria-checked]="store.settings().display.marqueeSpeed === option.value"
+                    [class]="store.settings().display.marqueeSpeed === option.value ? 'bg-white text-black' : 'bg-white/10 text-white'"
+                    (click)="setDisplay({ marqueeSpeed: option.value })">
+              {{ option.label }}
+            </button>
+          }
+        </div>
       </section>
 
       <section class="flex flex-col gap-3">
@@ -68,6 +79,12 @@
           <input class="field max-w-[10rem]" type="number" min="0" max="3600" step="5" inputmode="numeric"
                  [value]="store.settings().playback.expandControlsSeconds"
                  (change)="setPlaybackSeconds('expandControlsSeconds', $any($event.target).value)" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-base">Thời gian hiện nút khi xem toàn màn hình (giây)</span>
+          <input class="field max-w-[10rem]" type="number" min="1" max="3600" step="1" inputmode="numeric"
+                 [value]="store.settings().playback.fullscreenControlsSeconds"
+                 (change)="setPlaybackSeconds('fullscreenControlsSeconds', $any($event.target).value)" />
         </label>
         <label class="flex items-center gap-3 text-lg">
           <input type="checkbox" class="h-6 w-6 shrink-0 accent-brand" [checked]="store.settings().playback.captions"
@@ -106,7 +123,7 @@
         <ul class="flex flex-col gap-2">
           @for (c of store.settings().trustedChannels; track c.id) {
             <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">
-              <span class="line-clamp-1">{{ c.title }}</span>
+              <app-marquee class="min-w-0 flex-1" [text]="c.title" />
               <button type="button" class="btn-ghost shrink-0" (click)="removeChannel(c.id)">Xóa</button>
             </li>
           } @empty {
@@ -172,7 +189,7 @@
         <ul class="flex flex-col gap-2">
           @for (c of store.settings().blockedChannels; track c.id) {
             <li class="flex items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-2">
-              <span class="line-clamp-1">{{ c.title }}</span>
+              <app-marquee class="min-w-0 flex-1" [text]="c.title" />
               <button type="button" class="btn-ghost shrink-0" (click)="unblockChannel(c.id)">Bỏ chặn</button>
             </li>
           } @empty {
