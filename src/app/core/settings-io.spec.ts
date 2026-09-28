@@ -32,3 +32,17 @@ describe('parseSettings', () => {
     expect(huge?.playback).toEqual({ autoFullscreenSeconds: 3600, expandControlsSeconds: 30, captions: false, fullscreenControlsSeconds: 4 });
   });
 });
+
+describe('default topic upgrade', () => {
+  it('gives saved default topics that still use the old single query the richer multi-phrase query', () => {
+    const old = { ...DEFAULT_SETTINGS, topics: [{ id: 'nau-an', label: 'Nấu ăn', query: 'hướng dẫn nấu ăn món ngon gia đình' }] };
+    const topic = parseSettings(old)?.topics[0];
+    expect(topic?.query).toBe(DEFAULT_SETTINGS.topics.find((t) => t.id === 'nau-an')?.query);
+    expect(topic?.query.split(';').length).toBeGreaterThan(3);
+  });
+
+  it('leaves topics the manager has edited alone', () => {
+    const edited = { ...DEFAULT_SETTINGS, topics: [{ id: 'nau-an', label: 'Nấu ăn', query: 'món Huế' }] };
+    expect(parseSettings(edited)?.topics[0].query).toBe('món Huế');
+  });
+});

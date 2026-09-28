@@ -13,11 +13,11 @@
             <app-marquee class="w-full max-w-md text-xl font-semibold" [text]="next.title" />
             <div class="flex flex-wrap justify-center gap-3">
               <button type="button" class="btn-primary" (click)="goNext()">▶ Xem ngay</button>
-              <button type="button" class="btn-ghost" (click)="close()">← Quay lại</button>
+              <button type="button" class="btn-ghost" (click)="home.emit()">⌂ Về trang chủ</button>
             </div>
           } @else {
             <p class="text-xl">Đã xem hết video</p>
-            <button type="button" class="btn-primary" (click)="close()">← Quay lại</button>
+            <button type="button" class="btn-primary" (click)="home.emit()">⌂ Về trang chủ</button>
           }
         </div>
       }
@@ -28,7 +28,7 @@
             @if (nextVideo()) {
               <button type="button" class="btn-primary" (click)="goNext()">Xem video khác</button>
             }
-            <button type="button" class="btn-ghost" (click)="close()">← Quay lại</button>
+            <button type="button" class="btn-ghost" (click)="home.emit()">⌂ Về trang chủ</button>
           </div>
         </div>
       }
@@ -73,7 +73,7 @@
           <button type="button" class="btn-ghost min-w-0 whitespace-nowrap px-1" (click)="skip(SKIP_SECONDS)" aria-label="Tới 10 giây">10 ⟳</button>
         </div>
         <div class="grid grid-cols-2 gap-2 text-[0.9rem]">
-          <button type="button" class="btn-ghost min-w-0 px-2 text-center leading-tight" (click)="close()">← Quay lại</button>
+          <button type="button" class="btn-ghost min-w-0 px-2 text-center leading-tight" (click)="home.emit()">⌂ Về trang chủ</button>
           <button type="button" class="btn-ghost min-w-0 px-2 text-center leading-tight" (click)="enterFullscreen()">⛶ Toàn màn hình</button>
         </div>
       </div>

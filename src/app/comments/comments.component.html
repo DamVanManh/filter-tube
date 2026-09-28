@@ -85,7 +85,7 @@
   @if (state() === LOAD_STATE.LOADING) {
     <p class="text-center text-white/60">Đang tải bình luận…</p>
   } @else if (nextPageToken()) {
-    <button type="button" class="btn-ghost self-center" (click)="loadMore()">Xem thêm bình luận</button>
+    <div class="h-px" (appNearEnd)="loadMore()"></div>
   } @else if (state() === LOAD_STATE.IDLE && threads().length === 0) {
     <p class="text-white/60">Chưa có bình luận nào.</p>
   }

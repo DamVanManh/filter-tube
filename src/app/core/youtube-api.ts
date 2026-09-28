@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { SEARCH_ORDER, SearchOrder } from './topic-rotation';
 import { CapacitorHttp } from '@capacitor/core';
 import { environment } from '../../environments/environment';
 import {
@@ -229,7 +230,12 @@ export class YoutubeApi {
     return toComment(created);
   }
 
-  async searchVideoIds(query: string, max: number, publishedAfter: Date | null): Promise<string[]> {
+  async searchVideoIds(
+    query: string,
+    max: number,
+    publishedAfter: Date | null,
+    order: SearchOrder = SEARCH_ORDER.RELEVANCE,
+  ): Promise<string[]> {
     const params: Record<string, string> = {
       part: 'id',
       q: query,
@@ -240,7 +246,7 @@ export class YoutubeApi {
       relevanceLanguage: YOUTUBE_LANGUAGE,
       videoEmbeddable: 'true',
       videoSyndicated: 'true',
-      order: 'relevance',
+      order,
     };
     if (publishedAfter) params['publishedAfter'] = publishedAfter.toISOString();
     const res = await this.get<ListResponse<{ id: { videoId?: string } }>>('search', params);

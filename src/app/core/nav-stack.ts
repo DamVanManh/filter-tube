@@ -17,7 +17,11 @@ export interface ChannelScreen {
   readonly channel: ChannelRef;
 }
 
-export type Screen = PlayerScreen | ChannelScreen;
+export interface HistoryScreen {
+  readonly kind: 'history';
+}
+
+export type Screen = PlayerScreen | ChannelScreen | HistoryScreen;
 export type NavStack = readonly Screen[];
 
 export const MAX_STACK_DEPTH = 30;

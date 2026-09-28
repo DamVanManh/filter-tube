@@ -19,8 +19,15 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
   Kênh lạ (từ chủ đề) thêm: đủ ngưỡng người đăng ký và tuổi kênh, và không thuộc danh mục
   Phim & Hoạt hình / Giải trí / Tin tức / Hài / Trò chơi / Trailer.
   Kênh tin cậy bỏ qua ngưỡng kênh và danh mục nhưng vẫn chịu các quy tắc nội dung.
-- Tìm theo chủ đề luôn xếp theo "phổ biến"; khoảng thời gian luân phiên 1 năm / 30 ngày / 7 ngày mỗi 4 giờ,
-  kết quả cộng dồn (tối đa 150 video mỗi chủ đề) để mỗi lần tải có video mới.
+- Từ khóa chủ đề có thể gồm nhiều cụm cách nhau bằng dấu ";" (chủ đề mặc định có 6–8 cụm; máy đang
+  dùng từ khóa mặc định cũ được tự nâng cấp). Mỗi lần tải một chủ đề là một "lượt": lần lượt đổi cụm từ
+  khóa, rồi khoảng thời gian (1 năm / 30 ngày / 7 ngày), rồi cách xếp (liên quan / nhiều lượt xem).
+  Mỗi lượt lấy 50 kết quả, và lấy thêm 25 video mới nhất của 4 kênh xuất hiện nhiều nhất trong kết quả
+  (rẻ: ~1 đơn vị hạn mức mỗi kênh so với 100 cho một lần tìm). Video không bao giờ hiện được (ngắn hơn
+  ngưỡng, không nhúng được, dành cho trẻ em, không phải tiếng Việt) bị bỏ trước khi lưu. Kết quả cộng
+  dồn, tối đa 300 video mỗi chủ đề.
+- Các tab xếp mới nhất trước nhưng xen kẽ kênh: cùng một kênh không lặp lại trong 3 thẻ liền nhau.
+  Trang chủ hiện 30 video, cuộn gần cuối thì tự hiện thêm.
 - Bấm video: phát trong khung 16:9. Trình phát YouTube không nhận bất kỳ cú chạm nào — một lớp
   chắn phủ toàn khung; mọi điều khiển (phát/dừng, lùi/tới 10 giây, thanh tua) là nút của app.
   Khi tạm dừng hoặc phát xong, app che trình phát bằng lớp của mình. Phát xong: đếm ngược 8 giây
@@ -28,8 +35,15 @@ Mẹ xem YouTube, thuật toán đề xuất dựa trên lịch sử kéo mẹ v
 - Trang chủ có ô tìm kiếm; kết quả qua đúng bộ lọc như video chủ đề (kênh lạ). Kết quả mỗi từ khóa
   được giữ 6 giờ để tiết kiệm hạn mức. Nút ✕ quay lại các tab.
 - Màn xem video: video ở trên; khối điều khiển gồm thanh tua, lùi/tới 10 giây, phát/dừng,
-  "← Quay lại", "⛶ Toàn màn hình", và hai nút chọn nội dung bên dưới: "Bình luận" / "Video khác"
-  (video khác = danh sách tab "Mới nhất"; bấm một video sẽ mở nó, Quay lại về video trước).
+  "⌂ Về trang chủ", "⛶ Toàn màn hình", và hai nút chọn nội dung bên dưới: "Bình luận" / "Video khác"
+  (video khác = N video cùng chủ đề hoặc cùng kênh trước — mặc định 3, chỉnh trong Cài đặt → Hiển thị —
+  rồi danh sách tab "Mới nhất"; bấm một video sẽ mở nó, Back về video trước). Bình luận tự tải thêm
+  khi cuộn gần cuối (không có nút "Xem thêm").
+- Nút trên màn hình (điều khiển video, màn phát xong / lỗi, đầu trang kênh và trang lịch sử) đều về
+  thẳng trang chủ; lùi từng bước dùng nút Back của Android.
+- Lịch sử xem: nút "🕘 Lịch sử" ở góc trái đầu trang chủ (chỗ logo cũ; màn hẹp chỉ còn biểu tượng).
+  Lưu trên máy tối đa 300 video, mới nhất trước, xem lại thì đưa lên đầu, quá 300 thì bỏ video cũ nhất.
+  Ghi lúc mở video. Danh sách hiện dần khi cuộn.
   Bên dưới: tiêu đề, thời gian đăng, nút "Xem kênh", rồi nội dung đang chọn. Cuộn (lên hay xuống
   đều vậy) thì phần nút điều khiển thu gọn, chỉ còn hai nút chọn nội dung; không cuộn nữa trong 1
   khoảng thời gian cài đặt (mặc định 30 giây, 0 = không tự mở), hoặc chạm vào video, thì phần nút mở rộng lại (chạm video lúc đang thu gọn chỉ mở rộng, không
@@ -52,10 +66,10 @@ trong suốt (nền mờ dần, nút bán trong suốt) để vẫn nhìn thấy
 - Phụ đề (CC): mặc định TẮT; bật trong Cài đặt thì hiện phụ đề (ưu tiên tiếng Việt).
 - Giao diện luôn tối, kể cả màn chờ lúc mở app và thanh trạng thái, bất kể điện thoại đặt sáng hay tối.
 - Điều hướng tới lui giữ nguyên hành trình: mỗi màn (video, trang kênh) chồng lên màn trước;
-  Quay lại / nút Back của Android lùi đúng một bước: về đúng video đang xem (phát tiếp từ chỗ đã
+  Nút Back của Android lùi đúng một bước: về đúng video đang xem (phát tiếp từ chỗ đã
   dừng), đúng trang kênh (giữ vị trí cuộn), đúng kết quả tìm, đúng tab và vị trí cuộn trang chủ.
   "Video tiếp theo" tự phát sau khi hết video thì thay video hiện tại (không chồng thêm).
-- Trang kênh: ảnh, tên, số người đăng ký, video của kênh (tải thêm từng trang) — vẫn qua bộ lọc
+- Trang kênh: ảnh, tên, số người đăng ký, video của kênh (tự tải thêm khi cuộn gần cuối) — vẫn qua bộ lọc
   (kênh bị chặn ⇒ không hiện video). Xem video từ trang kênh thì "video tiếp theo" lấy từ kênh đó.
 - Bình luận: đọc không cần đăng nhập và không bao giờ hết hạn (xếp theo phổ biến, mở xem trả lời,
   tải thêm). Đăng nhập Google CHỈ làm được trong Cài đặt (sau mã PIN); màn xem video không có nút
@@ -70,11 +84,12 @@ trong suốt (nền mờ dần, nút bán trong suốt) để vẫn nhìn thấy
   buổi sáng (mở tạm thời được nhớ cả khi tắt app; sắp hết thì báo trước 5 phút rồi khóa lại). Chưa có
   PIN thì phải vào Cài đặt tạo PIN trước.
 - Làm mới: tự tải lại mỗi 30 phút khi app mở, khi mở app lên từ nền; kênh tin cậy 1 giờ/lần, chủ đề
-  4 giờ/lần, luân phiên khoảng tìm 1 năm / 30 ngày / 7 ngày để luôn có video mới.
+  4 giờ/lần (bấm ⟳ thì tối thiểu 1 giờ/lần), mỗi lần một lượt tìm khác (xem phần từ khóa chủ đề).
 - Không có đường nào rời app sang YouTube: lớp chắn chạm + tầng Android chặn mọi điều hướng
   và cửa sổ mới ra ngoài app (chỉ cho phép khung nhúng YouTube).
 - Mạng lỗi lúc mở app: tự thử lại (3s, 10s, 30s); mở app từ nền cũng tự tải lại.
-- Video đã xem được đẩy xuống cuối.
+- Video đã xem bị ẩn khỏi các tab trang chủ và "Video khác" (vẫn hiện trong kết quả tìm, trang kênh,
+  lịch sử với nhãn "Đã xem").
 - Ảnh đại diện người bình luận: máy chủ ảnh YouTube hay từ chối khi tải nhiều ảnh cùng lúc ⇒ app
   tự thử lại; vẫn lỗi thì hiện vòng tròn chữ cái đầu tên.
 - Từ cấm mới do app bổ sung ở các bản cập nhật được tự thêm vào danh sách đã lưu trên máy (không
@@ -88,6 +103,7 @@ trong suốt (nền mờ dần, nút bán trong suốt) để vẫn nhìn thấy
 - Không server. Dữ liệu nằm trên máy.
 
 ## Giới hạn
-- Quota YouTube Data API 10.000 đơn vị/ngày; mỗi lượt tìm chủ đề 100 ⇒ cache chủ đề 6 giờ.
+- Quota YouTube Data API 10.000 đơn vị/ngày; mỗi lượt chủ đề ~105 đơn vị (tìm 100 + kênh + chi tiết)
+  ⇒ 5 chủ đề × 6 lượt/ngày ≈ 3.200 đơn vị, còn dư cho tìm kiếm và bấm ⟳.
 - Lọc tự động không đảm bảo 100%; nút chặn kênh là lưới cuối.
 - App không ngăn mẹ mở app YouTube gốc — khuyến nghị tắt Lịch sử xem + ẩn app YouTube.

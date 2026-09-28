@@ -15,7 +15,7 @@ import { App } from '@capacitor/app';
 import { ChannelPageComponent, PlayRequest } from './channel/channel-page.component';
 import { AuthStore } from './core/auth.store';
 import { FEED_ERROR, FeedStore } from './core/feed.store';
-import { TAB_LATEST, feedTabs, videosForTab } from './core/feed-view';
+import { TAB_LATEST, feedTabs, otherVideosFor, videosForTab } from './core/feed-view';
 import { Video } from './core/models';
 import {
   ChannelRef,
@@ -39,7 +39,9 @@ import { WatchedStore } from './core/watched.store';
 import { PlayerComponent } from './player/player.component';
 import { SettingsComponent } from './settings/settings.component';
 import { VideoCardComponent } from './video-card/video-card.component';
-import { MarqueeComponent } from './marquee/marquee.component';
+import { HistoryPageComponent } from './history/history-page.component';
+import { NearEndDirective } from './near-end/near-end.directive';
+import { HistoryStore } from './core/history.store';
 
 const ERROR_TEXT: Record<string, string> = {
   [FEED_ERROR.QUOTA]: 'Hôm nay đã tải đủ lượt, mai sẽ có video mới. Vẫn xem được video bên dưới.',
@@ -57,6 +59,7 @@ const CLOCK_TICK_MS = 15_000;
 const BRAND_TEXT_MAX_SCALE = 1.15;
 const UNLOCKED_UNTIL_KEY = 'quiet-unlocked-until';
 const BACKGROUND_REFRESH_MS = 30 * 60 * 1000;
+const FEED_PAGE_SIZE = 30;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -65,12 +68,13 @@ function delay(ms: number): Promise<void> {
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PlayerComponent, SettingsComponent, ChannelPageComponent, VideoCardComponent, MarqueeComponent],
+  imports: [FormsModule, PlayerComponent, SettingsComponent, ChannelPageComponent, VideoCardComponent, HistoryPageComponent, NearEndDirective],
   templateUrl: './app.component.html',
 })
 export class AppComponent implements OnInit {
   private readonly settingsStore = inject(SettingsStore);
   private readonly watchedStore = inject(WatchedStore);
+  private readonly historyStore = inject(HistoryStore);
   private readonly auth = inject(AuthStore);
   protected readonly feed = inject(FeedStore);
   protected readonly search = inject(SearchStore);
@@ -105,6 +109,8 @@ export class AppComponent implements OnInit {
       new Date(),
     ),
   );
+  private readonly feedLimit = signal(FEED_PAGE_SIZE);
+  protected readonly shownFeedVideos = computed(() => this.feedVideos().slice(0, this.feedLimit()));
   protected readonly latestVideos = computed(() =>
     videosForTab(
       TAB_LATEST,
@@ -115,6 +121,10 @@ export class AppComponent implements OnInit {
       new Date(),
     ),
   );
+  protected readonly otherVideos = computed(() => {
+    const top = this.top();
+    return top?.kind === 'player' ? otherVideosFor(top.video, this.latestVideos(), this.settingsStore.settings().display.relatedFirstCount) : [];
+  });
   protected readonly nextVideo = computed(() => {
     const top = this.top();
     return top?.kind === 'player' ? nextInQueue(top.queue, top.video) : null;
@@ -145,10 +155,14 @@ export class AppComponent implements OnInit {
     effect(() => {
       document.documentElement.style.fontSize = `${rootFontSizePx(this.settingsStore.settings().display.uiScale)}px`;
     });
+    effect(() => {
+      const top = this.top();
+      if (top?.kind === 'player') void this.historyStore.record(top.video);
+    });
   }
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.settingsStore.load(), this.watchedStore.load(), this.feed.load(), this.auth.restore()]);
+    await Promise.all([this.settingsStore.load(), this.watchedStore.load(), this.historyStore.load(), this.feed.load(), this.auth.restore()]);
     this.unlockedUntilMs.set((await readJson<number>(UNLOCKED_UNTIL_KEY)) ?? 0);
     this.ready.set(true);
     await this.listenToApp();
@@ -190,8 +204,13 @@ export class AppComponent implements OnInit {
     this.tick();
   }
 
+  protected showMoreFeed(): void {
+    this.feedLimit.update((limit) => limit + FEED_PAGE_SIZE);
+  }
+
   protected selectTab(id: string): void {
     this.activeTab.set(id);
+    this.feedLimit.set(FEED_PAGE_SIZE);
     this.tabSelectedAt = Date.now();
     this.revealHeader();
     window.scrollTo({ top: 0 });
@@ -214,11 +233,19 @@ export class AppComponent implements OnInit {
 
   protected pickOtherVideo(video: Video): void {
     const position = this.player()?.position() ?? 0;
-    this.stack.update((stack) => pushScreen(rememberPlayerPosition(stack, position), playerScreen(video, this.latestVideos())));
+    this.stack.update((stack) => pushScreen(rememberPlayerPosition(stack, position), playerScreen(video, this.otherVideos())));
   }
 
   protected goBack(): void {
     this.stack.update(popScreen);
+  }
+
+  protected goHome(): void {
+    this.stack.set([]);
+  }
+
+  protected openHistory(): void {
+    this.stack.set([{ kind: 'history' }]);
   }
 
   protected openChannel(channel: ChannelRef): void {
@@ -266,6 +293,7 @@ export class AppComponent implements OnInit {
     }
     if (shouldReturnToLatest(this.selectedTab() === TAB_LATEST, this.tabSelectedAt, now.getTime())) {
       this.activeTab.set(TAB_LATEST);
+      this.feedLimit.set(FEED_PAGE_SIZE);
       window.scrollTo({ top: 0 });
     }
     if (now.getTime() - this.lastRefreshAt >= BACKGROUND_REFRESH_MS) void this.refreshRetryingNetwork();

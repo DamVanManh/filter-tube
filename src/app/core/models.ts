@@ -101,6 +101,7 @@ export interface DisplayPreferences {
   readonly uiScale: number;
   readonly fullTitles: boolean;
   readonly marqueeSpeed: number;
+  readonly relatedFirstCount: number;
 }
 
 export interface LanguageRule {

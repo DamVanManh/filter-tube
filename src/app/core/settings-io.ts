@@ -1,4 +1,5 @@
-import { DEFAULT_SETTINGS } from './defaults';
+import { DEFAULT_SETTINGS, LEGACY_DEFAULT_TOPIC_QUERIES } from './defaults';
+import { clampRelatedFirst } from './feed-view';
 import { withNewKeywordReleases } from './keyword-releases';
 import { clampMarqueeSpeed } from './marquee';
 import { clampUiScale } from './ui-scale';
@@ -42,6 +43,10 @@ function parseDisplay(raw: unknown): Settings['display'] {
       typeof r['marqueeSpeed'] === 'number' && Number.isFinite(r['marqueeSpeed'])
         ? clampMarqueeSpeed(r['marqueeSpeed'])
         : fallback.marqueeSpeed,
+    relatedFirstCount:
+      typeof r['relatedFirstCount'] === 'number' && Number.isFinite(r['relatedFirstCount'])
+        ? clampRelatedFirst(r['relatedFirstCount'])
+        : fallback.relatedFirstCount,
   };
 }
 
@@ -65,6 +70,14 @@ function parsePlayback(raw: unknown): Settings['playback'] {
   };
 }
 
+function upgradeDefaultTopics(topics: Settings['topics']): Settings['topics'] {
+  return topics.map((t) => {
+    if (LEGACY_DEFAULT_TOPIC_QUERIES[t.id] !== t.query) return t;
+    const current = DEFAULT_SETTINGS.topics.find((d) => d.id === t.id);
+    return current ? { ...t, query: current.query } : t;
+  });
+}
+
 export function parseSettings(raw: unknown): Settings | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
@@ -81,7 +94,7 @@ export function parseSettings(raw: unknown): Settings | null {
     typeof t[key] === 'number' && Number.isFinite(t[key]) ? (t[key] as number) : DEFAULT_SETTINGS.thresholds[key];
   return {
     trustedChannels: r['trustedChannels'] as Settings['trustedChannels'],
-    topics: r['topics'] as Settings['topics'],
+    topics: upgradeDefaultTopics(r['topics'] as Settings['topics']),
     bannedKeywords: keywords.keywords,
     keywordsVersion: keywords.version,
     blockedChannels: r['blockedChannels'] as Settings['blockedChannels'],

@@ -4,6 +4,7 @@ import { MarqueeComponent } from '../marquee/marquee.component';
 import { DisplayPreferences, FilterThresholds, PlaybackPreferences, QuietHours, Topic } from '../core/models';
 import { clampTimerSeconds } from '../core/settings-io';
 import { MARQUEE_SPEED_OPTIONS } from '../core/marquee';
+import { RELATED_FIRST_OPTIONS } from '../core/feed-view';
 import { UI_SCALE_OPTIONS } from '../core/ui-scale';
 import { addTopic as withTopicAdded, editTopic as withTopicEdited } from '../core/topics';
 import { AuthStore, SIGN_IN_OUTCOME } from '../core/auth.store';
@@ -49,6 +50,7 @@ export class SettingsComponent {
   protected readonly THRESHOLD_FIELDS = THRESHOLD_FIELDS;
   protected readonly UI_SCALE_OPTIONS = UI_SCALE_OPTIONS;
   protected readonly MARQUEE_SPEED_OPTIONS = MARQUEE_SPEED_OPTIONS;
+  protected readonly RELATED_FIRST_OPTIONS = RELATED_FIRST_OPTIONS;
   protected readonly lock = signal<Lock>(this.store.hasPin() ? LOCK.ENTER : LOCK.CREATE);
   protected readonly message = signal<string | null>(null);
   protected readonly busy = signal(false);

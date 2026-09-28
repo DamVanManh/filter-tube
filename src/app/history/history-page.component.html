@@ -1,0 +1,22 @@
+<div class="fixed inset-0 z-30 overflow-y-auto bg-neutral-950">
+  <header class="safe-top sticky top-0 z-10 flex items-center gap-3 bg-neutral-950/95 px-4 py-3 backdrop-blur">
+    <button type="button" class="btn-ghost shrink-0" (click)="closed.emit()">⌂ Trang chủ</button>
+    <h1 class="min-w-0 flex-1 truncate text-xl font-bold">Đã xem gần đây</h1>
+  </header>
+
+  <main class="safe-bottom flex flex-col gap-6 px-4 pb-8 pt-2">
+    <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (entry of shown(); track entry.video.id) {
+        <li>
+          <p class="mb-1 text-base text-white/60">Xem {{ relativeTime(entry.watchedAt) }}</p>
+          <app-video-card [video]="entry.video" [watched]="watchedIds().has(entry.video.id)" (chosen)="choose(entry.video)" />
+        </li>
+      } @empty {
+        <li class="col-span-full py-16 text-center text-lg text-white/60">Chưa xem video nào.</li>
+      }
+    </ul>
+    @if (shown().length < total()) {
+      <div class="h-px" (appNearEnd)="showMore()"></div>
+    }
+  </main>
+</div>

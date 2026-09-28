@@ -8,6 +8,7 @@ import { WatchedStore } from '../core/watched.store';
 import { CHANNEL_PAGE_SIZE, YoutubeApi } from '../core/youtube-api';
 import { VideoCardComponent } from '../video-card/video-card.component';
 import { MarqueeComponent } from '../marquee/marquee.component';
+import { NearEndDirective } from '../near-end/near-end.directive';
 
 export interface PlayRequest {
   readonly video: Video;
@@ -17,7 +18,7 @@ export interface PlayRequest {
 @Component({
   selector: 'app-channel-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [VideoCardComponent, MarqueeComponent],
+  imports: [VideoCardComponent, MarqueeComponent, NearEndDirective],
   templateUrl: './channel-page.component.html',
 })
 export class ChannelPageComponent {

@@ -2,8 +2,9 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { ChannelStats, Video, VIDEO_ORIGIN } from './models';
 import { SettingsStore } from './settings.store';
 import { readJson, writeJson } from './storage';
-import { mergeTopicVideos, searchWindowDaysFor } from './topic-rotation';
-import { YoutubeApi, YoutubeApiError, isQuotaError } from './youtube-api';
+import { channelsToExplore, mergeTopicVideos, searchPlanFor, uploadsPlaylistIdFor } from './topic-rotation';
+import { worthStoring } from './video-filter';
+import { VideoSource, YoutubeApi, YoutubeApiError, isQuotaError } from './youtube-api';
 
 const CACHE_KEY = 'feed-cache';
 const HOUR_MS = 3_600_000;
@@ -13,14 +14,17 @@ export const FEED_POLICY = {
   topicMinRefreshMs: HOUR_MS,
   statsTtlMs: 7 * 24 * HOUR_MS,
   uploadsPerChannel: 15,
-  searchResultsPerTopic: 40,
-  maxVideosPerTopic: 150,
+  searchResultsPerTopic: 50,
+  channelsExploredPerSearch: 4,
+  uploadsPerExploredChannel: 25,
+  maxVideosPerTopic: 300,
 } as const;
 
 interface CachedSource {
   readonly fetchedAt: number;
   readonly videos: readonly Video[];
   readonly query?: string;
+  readonly round?: number;
 }
 
 interface CachedStats extends ChannelStats {
@@ -110,15 +114,22 @@ export class FeedStore {
             this.isStale(sources[topicKey(t.id)], userRequested ? FEED_POLICY.topicMinRefreshMs : FEED_POLICY.topicTtlMs, now),
         )
         .map((t) => async () => {
-          const since = new Date(now - searchWindowDaysFor(now) * 24 * HOUR_MS);
-          const ids = await this.api.searchVideoIds(t.query, FEED_POLICY.searchResultsPerTopic, since);
-          const fresh = await this.api.videoDetails(ids, { origin: VIDEO_ORIGIN.TOPIC, topicId: t.id });
           const cached = sources[topicKey(t.id)];
-          const previous = cachedForQuery(cached, t.query) ? (cached?.videos ?? []) : [];
+          const sameQuery = cachedForQuery(cached, t.query);
+          const round = sameQuery ? (cached?.round ?? 0) : 0;
+          const plan = searchPlanFor(t.query, round);
+          const since = new Date(now - plan.windowDays * 24 * HOUR_MS);
+          const source: VideoSource = { origin: VIDEO_ORIGIN.TOPIC, topicId: t.id };
+          const ids = await this.api.searchVideoIds(plan.query, FEED_POLICY.searchResultsPerTopic, since, plan.order);
+          const keep = (v: Video) => worthStoring(v, settings);
+          const found = (await this.api.videoDetails(ids, source)).filter(keep);
+          const fromChannels = (await this.exploreChannels(found, settings.blockedChannels.map((c) => c.id), source)).filter(keep);
+          const previous = sameQuery ? (cached?.videos ?? []).filter(keep) : [];
           sources[topicKey(t.id)] = {
             fetchedAt: now,
             query: t.query,
-            videos: mergeTopicVideos(fresh, previous, FEED_POLICY.maxVideosPerTopic),
+            round: round + 1,
+            videos: mergeTopicVideos([...found, ...fromChannels], previous, FEED_POLICY.maxVideosPerTopic),
           };
         }),
     ];
@@ -135,6 +146,23 @@ export class FeedStore {
     const firstFailure = failures[0];
     if (firstFailure !== undefined) this.error.set(classifyError(firstFailure));
     this.loading.set(false);
+  }
+
+  /** Borrows the latest uploads of channels a search surfaced; cheap (1 quota unit per channel) compared to a search (100). */
+  private async exploreChannels(
+    found: readonly Video[],
+    blockedIds: readonly string[],
+    source: VideoSource,
+  ): Promise<Video[]> {
+    const playlists = channelsToExplore(found, new Set(blockedIds), FEED_POLICY.channelsExploredPerSearch)
+      .map(uploadsPlaylistIdFor)
+      .filter((id): id is string => id !== null);
+    const idLists = await Promise.all(
+      playlists.map((id) => this.api.latestUploadIds(id, FEED_POLICY.uploadsPerExploredChannel).catch(() => [])),
+    );
+    const known = new Set(found.map((v) => v.id));
+    const ids = [...new Set(idLists.flat())].filter((id) => !known.has(id));
+    return ids.length > 0 ? this.api.videoDetails(ids, source).catch(() => []) : [];
   }
 
   private isStale(source: CachedSource | undefined, ttlMs: number, now: number): boolean {

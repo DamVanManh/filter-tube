@@ -1,7 +1,7 @@
 import { DEFAULT_SETTINGS } from './defaults';
 import { ChannelStats, REJECT_REASON, Settings, Video, VIDEO_ORIGIN } from './models';
 import { normalizeSearchQuery, parseIsoDurationSeconds, uppercaseRatio } from './text';
-import { containsBannedKeyword, keepAcceptable, rejectReason } from './video-filter';
+import { containsBannedKeyword, keepAcceptable, rejectReason, worthStoring } from './video-filter';
 
 const NOW = new Date('2026-09-25T00:00:00Z');
 
@@ -178,5 +178,15 @@ describe('normalizeSearchQuery', () => {
     expect(normalizeSearchQuery('  Cải   Lương ')).toBe('cải lương');
     expect(normalizeSearchQuery('Ca\u0309i lu\u031bo\u031bng')).toBe(normalizeSearchQuery('Cải lương'));
     expect(normalizeSearchQuery('   ')).toBe('');
+  });
+});
+
+describe('worthStoring', () => {
+  it('drops videos that could never be shown (Shorts, kids, not embeddable, not Vietnamese) before they fill the pool', () => {
+    expect(worthStoring(video(), DEFAULT_SETTINGS)).toBe(true);
+    expect(worthStoring(video({ durationSeconds: 50 }), DEFAULT_SETTINGS)).toBe(false);
+    expect(worthStoring(video({ madeForKids: true }), DEFAULT_SETTINGS)).toBe(false);
+    expect(worthStoring(video({ embeddable: false }), DEFAULT_SETTINGS)).toBe(false);
+    expect(worthStoring(video({ title: 'English only title' }), DEFAULT_SETTINGS)).toBe(false);
   });
 });

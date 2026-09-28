@@ -1,4 +1,5 @@
 import { ChannelStats, Settings, Video, VIDEO_ORIGIN } from './models';
+import { spreadChannels } from './topic-rotation';
 import { keepAcceptable } from './video-filter';
 
 export const TAB_LATEST = 'latest';
@@ -39,10 +40,24 @@ export function videosForTab(
     if (tabId === TAB_TRUSTED) return settings.trustedChannels.some((c) => c.id === v.channelId);
     return v.topicId === tabId;
   });
-  const acceptable = keepAcceptable(dedupePreferTrusted(inTab), settings, stats, now);
-  return acceptable.sort((a, b) => {
-    const watchedDiff = Number(watched.has(a.id)) - Number(watched.has(b.id));
-    if (watchedDiff !== 0) return watchedDiff;
-    return b.publishedAt.localeCompare(a.publishedAt);
-  });
+  const unwatched = dedupePreferTrusted(inTab).filter((v) => !watched.has(v.id));
+  const newestFirst = keepAcceptable(unwatched, settings, stats, now).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  return spreadChannels(newestFirst);
+}
+
+export const RELATED_FIRST_MAX = 10;
+export const RELATED_FIRST_OPTIONS: readonly number[] = [0, 1, 2, 3, 5, 10];
+
+export function clampRelatedFirst(count: number): number {
+  return Math.min(RELATED_FIRST_MAX, Math.max(0, Math.round(count)));
+}
+
+/** "Other videos" under the player: a few from the same topic or channel first, then the rest of the latest feed. */
+export function otherVideosFor(current: Video, latest: readonly Video[], relatedCount: number): Video[] {
+  const candidates = latest.filter((v) => v.id !== current.id);
+  const related = candidates
+    .filter((v) => v.channelId === current.channelId || (current.topicId !== null && v.topicId === current.topicId))
+    .slice(0, relatedCount);
+  const relatedIds = new Set(related.map((v) => v.id));
+  return [...related, ...candidates.filter((v) => !relatedIds.has(v.id))];
 }

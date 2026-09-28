@@ -62,6 +62,7 @@ export class PlayerComponent {
   readonly fullscreenControlsSeconds = input(4);
 
   readonly closed = output<void>();
+  readonly home = output<void>();
   readonly watched = output<Video>();
   readonly playNext = output<Video>();
   readonly openChannel = output<ChannelRef>();

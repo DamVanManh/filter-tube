@@ -55,6 +55,16 @@ export function containsBannedKeyword(text: string, bannedKeywords: readonly str
   });
 }
 
+/** Worth keeping in the stored pool: fails none of the checks that depend only on the video itself. */
+export function worthStoring(video: Video, settings: Settings): boolean {
+  return (
+    video.embeddable &&
+    !video.madeForKids &&
+    video.durationSeconds >= settings.thresholds.minDurationMinutes * 60 &&
+    (!settings.language.requireVietnamese || looksVietnamese(video))
+  );
+}
+
 export function keepAcceptable(
   videos: readonly Video[],
   settings: Settings,

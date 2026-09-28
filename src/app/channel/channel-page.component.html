@@ -1,6 +1,6 @@
 <div class="fixed inset-0 z-30 overflow-y-auto bg-neutral-950">
   <header class="safe-top sticky top-0 z-10 flex items-center gap-3 bg-neutral-950/95 px-4 py-3 backdrop-blur">
-    <button type="button" class="btn-ghost shrink-0" (click)="closed.emit()">← Quay lại</button>
+    <button type="button" class="btn-ghost shrink-0" (click)="closed.emit()">⌂ Trang chủ</button>
     <h1 class="min-w-0 flex-1 text-xl font-bold"><app-marquee [text]="profile()?.title ?? channel().title" /></h1>
   </header>
 
@@ -38,7 +38,7 @@
           <button type="button" class="btn-ghost" (click)="retry()">Thử lại</button>
         </div>
       } @else if (nextPageToken()) {
-        <button type="button" class="btn-ghost self-center" (click)="loadMore()">Xem thêm video</button>
+        <div class="h-px" (appNearEnd)="loadMore()"></div>
       }
     }
   </main>

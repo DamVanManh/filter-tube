@@ -4,6 +4,7 @@ import { AvatarComponent } from '../avatar/avatar.component';
 import { AuthStore, SessionExpiredError, SignInRequiredError } from '../core/auth.store';
 import { CommentItem, CommentThread, Page } from '../core/models';
 import { compactCountVi, relativeTimeVi } from '../core/relative-time';
+import { NearEndDirective } from '../near-end/near-end.directive';
 import { COMMENTS_DISABLED_REASON, YoutubeApi, YoutubeApiError } from '../core/youtube-api';
 
 const MAX_COMMENT_LENGTH = 10_000;
@@ -28,7 +29,7 @@ function noticeForPostError(error: unknown): string {
 @Component({
   selector: 'app-comments',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, AvatarComponent],
+  imports: [FormsModule, AvatarComponent, NearEndDirective],
   templateUrl: './comments.component.html',
 })
 export class CommentsComponent {

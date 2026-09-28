@@ -64,6 +64,17 @@
             </button>
           }
         </div>
+        <p class="text-base text-white/60">Mục “Video khác” khi xem: số video cùng chủ đề hoặc cùng kênh xếp lên đầu, sau đó là video mới nhất</p>
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Số video cùng chủ đề xếp đầu">
+          @for (count of RELATED_FIRST_OPTIONS; track count) {
+            <button type="button" role="radio" class="btn min-w-[3.5rem] px-4"
+                    [attr.aria-checked]="store.settings().display.relatedFirstCount === count"
+                    [class]="store.settings().display.relatedFirstCount === count ? 'bg-white text-black' : 'bg-white/10 text-white'"
+                    (click)="setDisplay({ relatedFirstCount: count })">
+              {{ count === 0 ? 'Không' : count }}
+            </button>
+          }
+        </div>
       </section>
 
       <section class="flex flex-col gap-3">
@@ -134,10 +145,10 @@
 
       <section class="flex flex-col gap-3">
         <h2 class="text-xl font-semibold">Chủ đề</h2>
-        <p class="text-base text-white/60">Mỗi chủ đề là một tab. "Từ khóa tìm" càng cụ thể, video càng đúng ý.</p>
+        <p class="text-base text-white/60">Mỗi chủ đề là một tab. "Từ khóa tìm" càng cụ thể, video càng đúng ý. Ghi nhiều cụm cách nhau bằng dấu ; — mỗi lần tải app tìm một cụm khác nên video đa dạng hơn.</p>
         <form class="flex flex-col gap-2" (ngSubmit)="addTopic()">
           <input name="topicLabel" class="field" placeholder="Tên tab, ví dụ: Cải lương" [(ngModel)]="topicLabel" />
-          <input name="topicQuery" class="field" placeholder="Từ khóa tìm, ví dụ: trích đoạn cải lương xưa" [(ngModel)]="topicQuery" />
+          <textarea name="topicQuery" rows="3" class="field" placeholder="Từ khóa tìm, ví dụ: trích đoạn cải lương xưa; tân cổ giao duyên" [(ngModel)]="topicQuery"></textarea>
           <button type="submit" class="btn-primary">Thêm chủ đề</button>
         </form>
         <ul class="flex max-h-[22rem] flex-col gap-2 overflow-y-auto rounded-xl border border-white/10 p-2" aria-label="Danh sách chủ đề">
@@ -145,7 +156,7 @@
             @if (editingTopicId() === t.id) {
               <li class="flex flex-col gap-2 rounded-xl bg-white/10 p-3">
                 <input [name]="'editLabel-' + t.id" class="field" placeholder="Tên tab" [(ngModel)]="editLabel" />
-                <input [name]="'editQuery-' + t.id" class="field" placeholder="Từ khóa tìm" [(ngModel)]="editQuery" />
+                <textarea [name]="'editQuery-' + t.id" rows="5" class="field" placeholder="Từ khóa tìm; nhiều cụm cách nhau bằng dấu ;" [(ngModel)]="editQuery"></textarea>
                 <div class="flex gap-2">
                   <button type="button" class="btn-primary flex-1" (click)="saveTopic(t.id)">Lưu</button>
                   <button type="button" class="btn-ghost flex-1" (click)="cancelEditTopic()">Hủy</button>
